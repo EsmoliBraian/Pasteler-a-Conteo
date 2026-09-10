@@ -15,7 +15,7 @@ export default function Mas() {
   return (
     <div>
       <PageHeader title="Más" />
-      <div className="space-y-2 p-4">
+      <div className="grid grid-cols-1 gap-2 p-4 md:grid-cols-2">
         {items.map(({ to, label, desc, icon: Icon }) => (
           <Link
             key={to}

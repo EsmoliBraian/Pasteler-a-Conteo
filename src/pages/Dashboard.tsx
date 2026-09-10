@@ -1,12 +1,24 @@
 import { useMemo } from 'react'
 import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import { useTable } from '../hooks/useTable'
-import type { AppSettings, Debt, DebtInstallment, Envelope, EnvelopeTransaction, FixedExpense, SalesEntry } from '../types'
+import type {
+  AppSettings,
+  CashCount,
+  Debt,
+  DebtInstallment,
+  Envelope,
+  EnvelopeTransaction,
+  FixedExpense,
+  PaymentMethod,
+  SalesEntry,
+} from '../types'
 import {
+  daysWithSales,
   debtPendingBalance,
   installmentsDueInMonth,
   monthlyBreakevenDaily,
   profitPct,
+  projectedMonthlyNet,
   upcomingInstallments,
 } from '../lib/calculations'
 import { currentPeriod, daysInMonth, formatDate, formatMoney, formatMoneyCompact, toISODate, todayISO } from '../lib/format'
@@ -34,6 +46,8 @@ export default function Dashboard() {
   const { data: installments } = useTable<DebtInstallment>('debt_installments', (q) => q.order('due_date'))
   const { data: fixedExpenses } = useTable<FixedExpense>('fixed_expenses', (q) => q.eq('active', true))
   const { data: settingsRows } = useTable<AppSettings>('app_settings')
+  const { data: methods } = useTable<PaymentMethod>('payment_methods', (q) => q.eq('active', true).order('sort_order'))
+  const { data: cashCounts } = useTable<CashCount>('cash_counts', (q) => q.order('created_at', { ascending: false }))
   const settings = settingsRows[0]
 
   const monthEntries = entries.filter((e) => e.sale_date >= firstOfMonth)
@@ -43,9 +57,24 @@ export default function Dashboard() {
 
   const profitPercent = profitPct(envelopes)
   const gananciaMes = (monthNet * profitPercent) / 100
-  const dayOfMonth = new Date().getDate()
   const totalDaysMonth = daysInMonth(year, month)
-  const proyeccion = dayOfMonth > 0 ? (gananciaMes / dayOfMonth) * totalDaysMonth : 0
+  // Ojo: proyectamos al ritmo de los DÍAS CON VENTA CARGADA este mes (no el
+  // día del calendario), porque si recién empezaste a cargar datos esta
+  // semana aunque el mes ya iba más avanzado, la proyección no queda
+  // artificialmente baja.
+  const daysWithSalesThisMonth = daysWithSales(monthEntries)
+  const netProyectadoMes = projectedMonthlyNet(monthEntries, totalDaysMonth)
+  const proyeccion = daysWithSalesThisMonth > 0 ? (gananciaMes / daysWithSalesThisMonth) * totalDaysMonth : 0
+
+  const retiroPct = envelopes.find((e) => e.is_withdrawal_envelope)?.pct ?? 0
+  const retiroSanoProyectado = (netProyectadoMes * retiroPct) / 100
+
+  const latestCountByMethod = useMemo(() => {
+    const map = new Map<string, CashCount>()
+    for (const c of cashCounts) if (!map.has(c.payment_method_id)) map.set(c.payment_method_id, c)
+    return map
+  }, [cashCounts])
+  const totalOnHand = methods.reduce((sum, m) => sum + (latestCountByMethod.get(m.id)?.counted_amount ?? 0), 0)
 
   const breakevenMonthly = settings?.monthly_breakeven ?? 0
   const breakevenToday = monthlyBreakevenDaily(breakevenMonthly, today)
@@ -76,6 +105,8 @@ export default function Dashboard() {
   const nextDue = upcomingInstallments(installments)[0]
   const debtMonthlyCommitment = installmentsDueInMonth(installments).reduce((s, i) => s + i.amount, 0)
   const fixedExpensesTotal = fixedExpenses.reduce((s, e) => s + e.amount, 0)
+  const monthlyCommitments = fixedExpensesTotal + debtMonthlyCommitment
+  const pctComprometido = totalOnHand > 0 ? (monthlyCommitments / totalOnHand) * 100 : null
 
   const withdrawalEnvelope = envelopes.find((e) => e.is_withdrawal_envelope)
   const retirable = withdrawalEnvelope ? Math.max(0, envelopeBalances.get(withdrawalEnvelope.id) ?? 0) : 0
@@ -87,7 +118,52 @@ export default function Dashboard() {
         <Card className="space-y-1">
           <p className="text-xs font-medium text-stone-500 dark:text-stone-400">Ganancia del mes a la fecha</p>
           <p className="text-3xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(gananciaMes)}</p>
-          <p className="text-xs text-stone-400">Proyección al cierre: {formatMoney(proyeccion)}</p>
+          <p className="text-xs text-stone-400">
+            Proyección al cierre: {formatMoney(proyeccion)}
+            {daysWithSalesThisMonth > 0 && daysWithSalesThisMonth < totalDaysMonth && (
+              <> (con {daysWithSalesThisMonth} día{daysWithSalesThisMonth === 1 ? '' : 's'} cargado{daysWithSalesThisMonth === 1 ? '' : 's'} este mes)</>
+            )}
+          </p>
+        </Card>
+
+        <Card className="space-y-3">
+          <SectionTitle>Plata en mano</SectionTitle>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {methods.map((m) => {
+              const c = latestCountByMethod.get(m.id)
+              return (
+                <div key={m.id}>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">{m.name}</p>
+                  <p className="text-lg font-bold tabular-nums text-stone-900 dark:text-stone-50">
+                    {c ? formatMoneyCompact(c.counted_amount) : '—'}
+                  </p>
+                  {c && <p className="text-[11px] text-stone-400">{formatDate(c.count_date)}</p>}
+                </div>
+              )
+            })}
+          </div>
+          <div className="border-t border-stone-100 pt-2 dark:border-stone-800">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-stone-700 dark:text-stone-300">Total en mano</span>
+              <span className="text-lg font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(totalOnHand)}</span>
+            </div>
+            {pctComprometido !== null ? (
+              <p
+                className={`text-xs ${
+                  pctComprometido >= 100
+                    ? 'font-semibold text-red-600 dark:text-red-400'
+                    : pctComprometido >= 70
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-stone-400'
+                }`}
+              >
+                {pctComprometido.toFixed(0)}% ya tiene destino este mes ({formatMoney(monthlyCommitments)} en gastos fijos +
+                cuotas)
+              </p>
+            ) : (
+              <p className="text-xs text-stone-400">Cargá un conteo en Más → Conteo de caja para ver esto.</p>
+            )}
+          </div>
         </Card>
 
         <Card>
@@ -145,7 +221,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="grid grid-cols-2 gap-4">
+        <Card className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <StatTile label="Facturado (mes)" value={formatMoneyCompact(monthGross)} />
           <StatTile label="Neto a caja (mes)" value={formatMoneyCompact(monthNet)} />
           <StatTile label="Comisiones pagadas" value={formatMoneyCompact(monthCommission)} tone="warn" />
@@ -182,12 +258,20 @@ export default function Dashboard() {
           {!nextDue && <p className="text-xs text-stone-400">Sin cuotas pendientes.</p>}
         </Card>
 
-        <Card className="space-y-1">
+        <Card className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-stone-500 dark:text-stone-400">Podemos retirar este mes</span>
             <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(retirable)}</span>
           </div>
-          <p className="text-xs text-stone-400">Sin comprometer gastos fijos ({formatMoney(fixedExpensesTotal)}) ni cuotas de deuda.</p>
+          <p className="text-xs text-stone-400">Ya asignado en el sobre de Retiro, sin comprometer gastos fijos ({formatMoney(fixedExpensesTotal)}) ni cuotas de deuda.</p>
+          <div className="flex items-center justify-between border-t border-stone-100 pt-2 dark:border-stone-800">
+            <span className="text-sm text-stone-500 dark:text-stone-400">Retiro sano proyectado (mes completo)</span>
+            <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(retiroSanoProyectado)}</span>
+          </div>
+          <p className="text-xs text-stone-400">
+            {retiroPct}% de la venta neta, proyectada al ritmo de los {daysWithSalesThisMonth || 0} días de ventas cargados
+            este mes.
+          </p>
         </Card>
 
         {!settings && <Banner tone="info">Cargá el punto de equilibrio mensual en Ajustes para ver estos indicadores.</Banner>}

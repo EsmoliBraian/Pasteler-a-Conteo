@@ -299,7 +299,8 @@ insert into withdrawal_categories (name, monthly_budget, sort_order)
 select * from (values
   ('Alquiler personal', 800000, 1),
   ('Comida', 0, 2),
-  ('Otros', 0, 3)
+  ('Ahorro personal', 0, 3),
+  ('Otros', 0, 4)
 ) as v(name, monthly_budget, sort_order)
 where not exists (select 1 from withdrawal_categories);
 

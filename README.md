@@ -9,6 +9,8 @@ usarse desde el celular entre dos personas, con los datos sincronizados en vivo.
 - **Datos**: Supabase (Postgres + Auth + Realtime), plan gratuito
 - **Hosting**: GitHub Pages, con build y deploy automático por GitHub Actions
 - **PWA**: instalable desde el navegador ("Agregar a pantalla de inicio")
+- **Responsive**: nav inferior + una columna en el celular, barra lateral + columna
+  más ancha en escritorio (a partir de 768px de ancho)
 
 ## 1. Crear el proyecto en Supabase
 
@@ -59,9 +61,9 @@ los secrets de GitHub Actions (para que la app publicada funcione).
 
 Si ya habías corrido `schema.sql` en una versión anterior de la app, correr todo el
 archivo de nuevo no alcanza para agregar las tablas nuevas de golpe con la columna que
-se sumó a `withdrawals`. Corré una vez, en SQL Editor, el contenido de
-[`supabase/migrations/2026-09-10-gastos-conteo.sql`](supabase/migrations/2026-09-10-gastos-conteo.sql).
-Si estás arrancando de cero, no hace falta: ya está todo incluido en `schema.sql`.
+se sumó a `withdrawals`. Corré una vez, en SQL Editor, el contenido de cada archivo
+nuevo en [`supabase/migrations/`](supabase/migrations/), en orden por fecha. Si estás
+arrancando de cero, no hace falta: ya está todo incluido en `schema.sql`.
 
 ## 2. Probar en tu computadora (opcional)
 
@@ -150,6 +152,15 @@ celular sin recargar.
   como salidos de ahí) contra lo que efectivamente hay contado a mano. No tiene en
   cuenta gastos fijos ni cuotas de deuda, que no salen de la plata física del día a
   día.
+- **"Plata en mano"** (en el panel principal) muestra el último conteo cargado de cada
+  medio de pago y qué porcentaje de ese total ya tiene destino este mes (gastos fijos
+  + cuotas de deuda que vencen este mes).
+- **"Retiro sano proyectado"** (panel principal y Retiro personal) toma el neto
+  vendido y lo proyecta al ritmo de los DÍAS CON VENTA CARGADA este mes, no al día del
+  calendario — así, si recién empezaste a cargar ventas de una semana puntual aunque
+  el mes ya iba más avanzado, la proyección no sale artificialmente baja. Es el % del
+  sobre "Retiro de nosotros" aplicado a esa proyección. Cada categoría de retiro
+  muestra qué porcentaje de ese retiro sano representa su presupuesto configurado.
 - **Importar desde Excel** (en Costos y recetas) está calibrado contra archivos reales
   de Fudo: éste exporta dos archivos separados, uno con hojas "Ingredientes" +
   "Subingredientes" y otro con "Productos" + "Recetas" — se pueden subir juntos o de a

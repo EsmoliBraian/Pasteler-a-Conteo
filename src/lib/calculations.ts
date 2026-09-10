@@ -105,6 +105,24 @@ export function profitPct(envelopes: Envelope[]) {
   return envelopes.filter((e) => e.is_profit).reduce((sum, e) => sum + e.pct, 0)
 }
 
+/** Cantidad de días distintos con venta cargada dentro de las entradas dadas. */
+export function daysWithSales(entries: SalesEntry[]) {
+  return new Set(entries.map((e) => e.sale_date)).size
+}
+
+/**
+ * Proyecta el neto del mes al ritmo de los días que YA se cargaron (no al
+ * ritmo del día del calendario) — así, si recién empezaste a cargar ventas
+ * esta semana aunque el mes ya iba más avanzado, la proyección no queda
+ * artificialmente baja.
+ */
+export function projectedMonthlyNet(monthEntries: SalesEntry[], totalDaysInMonth: number) {
+  const days = daysWithSales(monthEntries)
+  if (days === 0) return 0
+  const net = monthEntries.reduce((sum, e) => sum + e.net_amount, 0)
+  return (net / days) * totalDaysInMonth
+}
+
 /**
  * Cuánto "debería" haber acumulado en un medio de pago: neto vendido por ese
  * medio, menos los gastos y retiros que se marcaron explícitamente como

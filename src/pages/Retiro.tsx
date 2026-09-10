@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useTable } from '../hooks/useTable'
-import type { Envelope, EnvelopeTransaction, Withdrawal, WithdrawalCategory } from '../types'
-import { currentPeriod, formatDate, formatMoney, todayISO } from '../lib/format'
+import type { Envelope, EnvelopeTransaction, PaymentMethod, SalesEntry, Withdrawal, WithdrawalCategory } from '../types'
+import { currentPeriod, daysInMonth, formatDate, formatMoney, todayISO } from '../lib/format'
+import { projectedMonthlyNet } from '../lib/calculations'
 import { Banner, Button, Card, MoneyInput, PageHeader, SectionTitle, TextInput } from '../components/UI'
 import { Pencil, Trash2 } from 'lucide-react'
 
@@ -19,6 +20,9 @@ export default function Retiro() {
   )
   const { data: envelopes } = useTable<Envelope>('envelopes', (q) => q.eq('active', true))
   const { data: transactions } = useTable<EnvelopeTransaction>('envelope_transactions')
+  const { data: methods } = useTable<PaymentMethod>('payment_methods', (q) => q.eq('active', true).order('sort_order'))
+  const firstOfMonth = `${period}-01`
+  const { data: monthSales } = useTable<SalesEntry>('sales_entries', (q) => q.gte('sale_date', firstOfMonth), [firstOfMonth])
 
   const withdrawalEnvelope = envelopes.find((e) => e.is_withdrawal_envelope) ?? null
   const available = useMemo(
@@ -32,9 +36,14 @@ export default function Retiro() {
   const withdrawnThisMonth = thisMonth.reduce((s, w) => s + w.amount, 0)
   const budgetTotal = categories.reduce((s, c) => s + c.monthly_budget, 0)
 
+  const [year, month] = period.split('-').map(Number)
+  const retiroPct = withdrawalEnvelope?.pct ?? 0
+  const retiroSanoProyectado = (projectedMonthlyNet(monthSales, daysInMonth(year, month)) * retiroPct) / 100
+
   const [editingCat, setEditingCat] = useState<string | null>(null)
   const [amount, setAmount] = useState(0)
   const [categoryId, setCategoryId] = useState('')
+  const [paymentMethodId, setPaymentMethodId] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(todayISO())
   const [error, setError] = useState<string | null>(null)
@@ -49,6 +58,7 @@ export default function Retiro() {
       .from('withdrawals')
       .insert({
         withdrawal_category_id: categoryId || null,
+        payment_method_id: paymentMethodId || null,
         amount,
         description: description || null,
         withdrawal_date: date,
@@ -112,25 +122,46 @@ export default function Retiro() {
           )}
         </Card>
 
+        <Card className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-stone-500 dark:text-stone-400">Retiro sano proyectado (mes completo)</span>
+            <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(retiroSanoProyectado)}</span>
+          </div>
+          <p className="text-xs text-stone-400">
+            {retiroPct}% de la venta neta, proyectada al ritmo de los días de venta ya cargados este mes.
+          </p>
+        </Card>
+
         <div>
           <SectionTitle>Categorías</SectionTitle>
           <div className="space-y-2">
-            {categories.map((cat) =>
-              editingCat === cat.id ? (
+            {categories.map((cat) => {
+              const pctDeSano = retiroSanoProyectado > 0 ? (cat.monthly_budget / retiroSanoProyectado) * 100 : null
+              return editingCat === cat.id ? (
                 <EditCategoryForm key={cat.id} category={cat} onDone={() => { setEditingCat(null); refetchCategories() }} />
               ) : (
                 <Card key={cat.id} className="flex items-center justify-between py-3">
                   <div>
                     <p className="font-medium text-stone-800 dark:text-stone-200">{cat.name}</p>
-                    <p className="text-xs text-stone-400">Presupuesto: {formatMoney(cat.monthly_budget)}/mes</p>
+                    <p className="text-xs text-stone-400">
+                      Presupuesto: {formatMoney(cat.monthly_budget)}/mes
+                      {pctDeSano !== null && ` · ${pctDeSano.toFixed(0)}% del retiro sano`}
+                    </p>
                   </div>
                   <button onClick={() => setEditingCat(cat.id)} className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
                     <Pencil size={16} />
                   </button>
                 </Card>
               )
-            )}
+            })}
           </div>
+          {budgetTotal > retiroSanoProyectado && retiroSanoProyectado > 0 && (
+            <div className="mt-2">
+              <Banner tone="warn">
+                Los presupuestos configurados ({formatMoney(budgetTotal)}) suman más que el retiro sano proyectado.
+              </Banner>
+            </div>
+          )}
         </div>
 
         <Card as="form" onSubmit={handleAdd} className="space-y-3">
@@ -144,6 +175,18 @@ export default function Retiro() {
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={paymentMethodId}
+            onChange={(e) => setPaymentMethodId(e.target.value)}
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          >
+            <option value="">¿De dónde salió? (opcional)</option>
+            {methods.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
               </option>
             ))}
           </select>

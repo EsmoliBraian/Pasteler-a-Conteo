@@ -16,6 +16,7 @@ export type Envelope = {
   is_debt_envelope: boolean
   is_fixed_expense_envelope: boolean
   is_withdrawal_envelope: boolean
+  is_supplies_envelope: boolean
   sort_order: number
   active: boolean
 }

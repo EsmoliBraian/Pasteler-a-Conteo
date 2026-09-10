@@ -143,10 +143,13 @@ celular sin recargar.
   38%). Si cambiás los porcentajes de los sobres en Ajustes, este cálculo se ajusta
   solo.
 - **Gastos** (en Más → Gastos) es la forma rápida de cargar cualquier gasto suelto,
-  marcando si fue del local o personal (mío/de mi novia). Ambos tipos descuentan de
-  "cuánto podemos retirar" — así lo pidió Braian; si en la práctica se siente raro que
-  un gasto del local reste del retiro personal en vez de, por ejemplo, del sobre de
-  Insumos, es cuestión de avisar y se cambia el destino.
+  marcando si fue del local o personal (mío/de mi novia). Los gastos "del local"
+  (insumos, proveedores, compras al local) descuentan del sobre "Insumos y
+  proveedores"; los "personales" descuentan del sobre "Retiro de nosotros" (y por lo
+  tanto de "cuánto podemos retirar"). La app avisa si el sobre correspondiente queda
+  en negativo. Una compra con tarjeta de crédito a una sola cuota (ej. MercadoLibre)
+  se carga igual, como gasto del local — no hace falta pasarla por Deudas, que es
+  para financiaciones en varias cuotas.
 - **Conteo de caja** (en Más → Conteo de caja) compara, para cada medio de pago, lo
   que "debería" haber (neto vendido por ese medio menos los gastos/retiros marcados
   como salidos de ahí) contra lo que efectivamente hay contado a mano. No tiene en

@@ -32,6 +32,7 @@ create table if not exists envelopes (
   is_debt_envelope boolean not null default false, -- a este sobre se descuentan los pagos de cuotas
   is_fixed_expense_envelope boolean not null default false, -- a este sobre se descuentan los gastos fijos
   is_withdrawal_envelope boolean not null default false, -- a este sobre se descuentan los retiros personales
+  is_supplies_envelope boolean not null default false, -- a este sobre se descuentan los gastos "del local"
   sort_order int not null default 0,
   active boolean not null default true,
   created_at timestamptz not null default now()
@@ -269,14 +270,14 @@ select * from (values
 ) as v(name, commission_pct, settlement_days, sort_order)
 where not exists (select 1 from payment_methods);
 
-insert into envelopes (name, pct, description, is_profit, is_debt_envelope, is_fixed_expense_envelope, is_withdrawal_envelope, sort_order)
+insert into envelopes (name, pct, description, is_profit, is_debt_envelope, is_fixed_expense_envelope, is_withdrawal_envelope, is_supplies_envelope, sort_order)
 select * from (values
-  ('Insumos y proveedores', 33, 'Ingredientes, envases, café', false, false, false, false, 1),
-  ('Gastos fijos', 26, 'Alquiler, luz, sueldos, impuestos', false, false, true, false, 2),
-  ('Retiro de nosotros', 26, 'Nuestro alquiler, comida, vida personal', true, false, false, true, 3),
-  ('Reservas', 12, 'Aguinaldos, imprevistos, compras grandes', true, false, false, false, 4),
-  ('Deudas y créditos', 3, 'Cuotas de préstamos y tarjetas', false, true, false, false, 5)
-) as v(name, pct, description, is_profit, is_debt_envelope, is_fixed_expense_envelope, is_withdrawal_envelope, sort_order)
+  ('Insumos y proveedores', 33, 'Ingredientes, envases, café', false, false, false, false, true, 1),
+  ('Gastos fijos', 26, 'Alquiler, luz, sueldos, impuestos', false, false, true, false, false, 2),
+  ('Retiro de nosotros', 26, 'Nuestro alquiler, comida, vida personal', true, false, false, true, false, 3),
+  ('Reservas', 12, 'Aguinaldos, imprevistos, compras grandes', true, false, false, false, false, 4),
+  ('Deudas y créditos', 3, 'Cuotas de préstamos y tarjetas', false, true, false, false, false, 5)
+) as v(name, pct, description, is_profit, is_debt_envelope, is_fixed_expense_envelope, is_withdrawal_envelope, is_supplies_envelope, sort_order)
 where not exists (select 1 from envelopes);
 
 insert into fixed_expenses (name, amount, sort_order)

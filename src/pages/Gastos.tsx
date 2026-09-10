@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useTable } from '../hooks/useTable'
-import type { Envelope, Expense, ExpenseOrigin, PaymentMethod } from '../types'
+import type { Envelope, EnvelopeTransaction, Expense, ExpenseOrigin, PaymentMethod } from '../types'
 import { formatDate, formatMoney, todayISO } from '../lib/format'
 import { Banner, Button, Card, MoneyInput, PageHeader, SectionTitle, TextInput } from '../components/UI'
 import { Trash2 } from 'lucide-react'
@@ -14,7 +14,16 @@ export default function Gastos() {
   const { data: expenses, refetch } = useTable<Expense>('expenses', (q) => q.order('expense_date', { ascending: false }))
   const { data: methods } = useTable<PaymentMethod>('payment_methods', (q) => q.eq('active', true).order('sort_order'))
   const { data: envelopes } = useTable<Envelope>('envelopes', (q) => q.eq('active', true))
+  const { data: transactions } = useTable<EnvelopeTransaction>('envelope_transactions')
+
   const withdrawalEnvelope = envelopes.find((e) => e.is_withdrawal_envelope) ?? null
+  const suppliesEnvelope = envelopes.find((e) => e.is_supplies_envelope) ?? null
+
+  const balances = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const tx of transactions) map.set(tx.envelope_id, (map.get(tx.envelope_id) ?? 0) + Number(tx.amount))
+    return map
+  }, [transactions])
 
   const [amount, setAmount] = useState(0)
   const [description, setDescription] = useState('')
@@ -23,6 +32,10 @@ export default function Gastos() {
   const [date, setDate] = useState(todayISO())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
+
+  const targetEnvelope = origin === 'local' ? suppliesEnvelope : withdrawalEnvelope
+  const targetBalance = targetEnvelope ? (balances.get(targetEnvelope.id) ?? 0) : 0
 
   const thisMonthTotal = expenses
     .filter((e) => e.expense_date.slice(0, 7) === todayISO().slice(0, 7))
@@ -33,6 +46,7 @@ export default function Gastos() {
     if (amount <= 0) return
     setSaving(true)
     setError(null)
+    setWarning(null)
     const { data: expense, error: expError } = await supabase
       .from('expenses')
       .insert({
@@ -50,9 +64,9 @@ export default function Gastos() {
       setSaving(false)
       return
     }
-    if (withdrawalEnvelope) {
+    if (targetEnvelope) {
       await supabase.from('envelope_transactions').insert({
-        envelope_id: withdrawalEnvelope.id,
+        envelope_id: targetEnvelope.id,
         amount: -amount,
         type: 'expense_payment',
         description: `Gasto ${ORIGIN_LABEL[origin].toLowerCase()}${description ? ' · ' + description : ''}`,
@@ -61,9 +75,13 @@ export default function Gastos() {
         related_date: date,
         created_by: session?.user.id,
       })
+      if (targetBalance - amount < 0) {
+        setWarning(`El sobre "${targetEnvelope.name}" quedó en negativo.`)
+      }
     }
     setAmount(0)
     setDescription('')
+    setPaymentMethodId('')
     setSaving(false)
     refetch()
   }
@@ -76,7 +94,7 @@ export default function Gastos() {
 
   return (
     <div>
-      <PageHeader title="Gastos" subtitle="Descuentan de lo que podemos retirar" />
+      <PageHeader title="Gastos" subtitle="Del local: insumos/proveedores · Personal: descuenta el retiro" />
       <div className="space-y-4 p-4">
         <Card className="flex items-center justify-between">
           <span className="text-sm text-stone-500 dark:text-stone-400">Gastado este mes</span>
@@ -105,20 +123,41 @@ export default function Gastos() {
               Personal
             </button>
           </div>
-          <MoneyInput value={amount} onChange={setAmount} />
-          <TextInput placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <select
-            value={paymentMethodId}
-            onChange={(e) => setPaymentMethodId(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
-          >
-            <option value="">¿De dónde salió? (opcional)</option>
-            {methods.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
+          {targetEnvelope && (
+            <p className="text-xs text-stone-400">
+              Sale del sobre <strong>"{targetEnvelope.name}"</strong> · disponible{' '}
+              <span className={targetBalance < 0 ? 'font-semibold text-red-600 dark:text-red-400' : ''}>
+                {formatMoney(targetBalance)}
+              </span>
+            </p>
+          )}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Monto</label>
+            <MoneyInput value={amount} onChange={setAmount} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Descripción</label>
+            <TextInput
+              placeholder="¿Qué compraste? (ej: harina, arreglo del horno)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">¿De dónde salió? (opcional)</label>
+            <select
+              value={paymentMethodId}
+              onChange={(e) => setPaymentMethodId(e.target.value)}
+              className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            >
+              <option value="">Sin especificar</option>
+              {methods.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <input
             type="date"
             value={date}
@@ -127,6 +166,7 @@ export default function Gastos() {
             className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
           />
           {error && <Banner tone="bad">{error}</Banner>}
+          {warning && <Banner tone="warn">{warning}</Banner>}
           <Button type="submit" className="w-full" disabled={saving || amount <= 0}>
             {saving ? 'Guardando…' : 'Registrar gasto'}
           </Button>

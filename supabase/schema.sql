@@ -173,7 +173,33 @@ create table if not exists cash_counts (
 );
 
 -- ----------------------------------------------------------------------------
--- 9. Costos y recetas
+-- 9. Compras con tarjeta de crédito
+-- ----------------------------------------------------------------------------
+create table if not exists cards (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  sort_order int not null default 0,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists card_purchases (
+  id uuid primary key default gen_random_uuid(),
+  card_id uuid not null references cards(id),
+  amount numeric not null,
+  description text,
+  origin text not null check (origin in ('local','personal')),
+  purchase_date date not null default current_date,
+  due_date date not null,
+  status text not null default 'pendiente' check (status in ('pendiente','pagada')),
+  paid_at timestamptz,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_card_purchases_due on card_purchases (due_date) where status = 'pendiente';
+
+-- ----------------------------------------------------------------------------
+-- 10. Costos y recetas
 -- ----------------------------------------------------------------------------
 create table if not exists ingredients (
   id uuid primary key default gen_random_uuid(),
@@ -222,7 +248,7 @@ create table if not exists recipe_items (
 );
 
 -- ----------------------------------------------------------------------------
--- 10. Configuración general (fila única)
+-- 11. Configuración general (fila única)
 -- ----------------------------------------------------------------------------
 create table if not exists app_settings (
   id int primary key default 1,
@@ -243,8 +269,9 @@ begin
   for t in select unnest(array[
     'payment_methods','envelopes','sales_entries','debts','debt_installments',
     'envelope_transactions','fixed_expenses','fixed_expense_payments',
-    'withdrawal_categories','withdrawals','expenses','cash_counts','ingredients',
-    'sub_ingredients','sub_ingredient_items','products','recipe_items','app_settings'
+    'withdrawal_categories','withdrawals','expenses','cash_counts','cards',
+    'card_purchases','ingredients','sub_ingredients','sub_ingredient_items',
+    'products','recipe_items','app_settings'
   ])
   loop
     execute format('alter table %I enable row level security;', t);

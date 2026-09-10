@@ -138,6 +138,28 @@ export type CashCount = {
   created_at: string
 }
 
+export type Card = {
+  id: string
+  name: string
+  sort_order: number
+  active: boolean
+}
+
+export type CardPurchaseStatus = 'pendiente' | 'pagada'
+
+export type CardPurchase = {
+  id: string
+  card_id: string
+  amount: number
+  description: string | null
+  origin: ExpenseOrigin
+  purchase_date: string
+  due_date: string
+  status: CardPurchaseStatus
+  paid_at: string | null
+  created_at: string
+}
+
 export type Unit = 'kg' | 'l' | 'un'
 
 export type Ingredient = {

@@ -14,6 +14,7 @@ const GastosFijos = lazy(() => import('./pages/GastosFijos'))
 const Recetas = lazy(() => import('./pages/Recetas'))
 const Retiro = lazy(() => import('./pages/Retiro'))
 const Gastos = lazy(() => import('./pages/Gastos'))
+const Tarjetas = lazy(() => import('./pages/Tarjetas'))
 const Conteo = lazy(() => import('./pages/Conteo'))
 const Ajustes = lazy(() => import('./pages/Ajustes'))
 
@@ -72,6 +73,7 @@ export default function App() {
                 <Route path="/mas/recetas" element={<Recetas />} />
                 <Route path="/mas/retiro" element={<Retiro />} />
                 <Route path="/mas/gastos" element={<Gastos />} />
+                <Route path="/mas/tarjetas" element={<Tarjetas />} />
                 <Route path="/mas/conteo" element={<Conteo />} />
                 <Route path="/mas/ajustes" element={<Ajustes />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

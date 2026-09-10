@@ -3,6 +3,7 @@ import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis
 import { useTable } from '../hooks/useTable'
 import type {
   AppSettings,
+  CardPurchase,
   CashCount,
   Debt,
   DebtInstallment,
@@ -48,6 +49,7 @@ export default function Dashboard() {
   const { data: settingsRows } = useTable<AppSettings>('app_settings')
   const { data: methods } = useTable<PaymentMethod>('payment_methods', (q) => q.eq('active', true).order('sort_order'))
   const { data: cashCounts } = useTable<CashCount>('cash_counts', (q) => q.order('created_at', { ascending: false }))
+  const { data: cardPurchases } = useTable<CardPurchase>('card_purchases', (q) => q.eq('status', 'pendiente').order('due_date'))
   const settings = settingsRows[0]
 
   const monthEntries = entries.filter((e) => e.sale_date >= firstOfMonth)
@@ -107,6 +109,9 @@ export default function Dashboard() {
   const fixedExpensesTotal = fixedExpenses.reduce((s, e) => s + e.amount, 0)
   const monthlyCommitments = fixedExpensesTotal + debtMonthlyCommitment
   const pctComprometido = totalOnHand > 0 ? (monthlyCommitments / totalOnHand) * 100 : null
+
+  const totalCardPending = cardPurchases.reduce((s, p) => s + p.amount, 0)
+  const nextCardDue = cardPurchases[0]
 
   const withdrawalEnvelope = envelopes.find((e) => e.is_withdrawal_envelope)
   const retirable = withdrawalEnvelope ? Math.max(0, envelopeBalances.get(withdrawalEnvelope.id) ?? 0) : 0
@@ -256,6 +261,20 @@ export default function Dashboard() {
             </p>
           )}
           {!nextDue && <p className="text-xs text-stone-400">Sin cuotas pendientes.</p>}
+        </Card>
+
+        <Card className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-stone-500 dark:text-stone-400">Tarjetas de crédito pendientes</span>
+            <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(totalCardPending)}</span>
+          </div>
+          {nextCardDue ? (
+            <p className="text-xs text-stone-400">
+              Próximo vencimiento: {formatDate(nextCardDue.due_date)} · {formatMoney(nextCardDue.amount)}
+            </p>
+          ) : (
+            <p className="text-xs text-stone-400">Sin compras pendientes de pago.</p>
+          )}
         </Card>
 
         <Card className="space-y-2">

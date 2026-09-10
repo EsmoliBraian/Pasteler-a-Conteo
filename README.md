@@ -164,6 +164,13 @@ celular sin recargar.
   el mes ya iba más avanzado, la proyección no sale artificialmente baja. Es el % del
   sobre "Retiro de nosotros" aplicado a esa proyección. Cada categoría de retiro
   muestra qué porcentaje de ese retiro sano representa su presupuesto configurado.
+- **Compras con tarjeta** (en Más → Compras con tarjeta) es para compras a una sola
+  cuota (ej. MercadoLibre), no para financiaciones en varias cuotas (eso es Deudas).
+  Cada compra se vincula a una tarjeta (se pueden crear las que hagan falta), tiene
+  fecha de compra y fecha en la que hay que pagarla, y descuenta del sobre
+  correspondiente en el momento de cargarla (Insumos si es "del local", Retiro si es
+  "personal") — igual que un Gasto, pero con seguimiento de vencimiento y estado
+  pendiente/pagada para saber cuánto se viene en la próxima tarjeta.
 - **Importar desde Excel** (en Costos y recetas) está calibrado contra archivos reales
   de Fudo: éste exporta dos archivos separados, uno con hojas "Ingredientes" +
   "Subingredientes" y otro con "Productos" + "Recetas" — se pueden subir juntos o de a

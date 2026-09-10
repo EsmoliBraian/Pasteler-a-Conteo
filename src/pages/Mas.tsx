@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../components/UI'
-import { ChefHat, ChevronRight, PiggyBank, Settings, Wallet2 } from 'lucide-react'
+import { CalculatorIcon, ChefHat, ChevronRight, PiggyBank, Receipt, Settings, Wallet2 } from 'lucide-react'
 
 const items = [
   { to: '/mas/gastos-fijos', label: 'Gastos fijos', desc: 'Alquiler, sueldos, impuestos', icon: Wallet2 },
+  { to: '/mas/gastos', label: 'Gastos', desc: 'Del local o personales, descuentan el retiro', icon: Receipt },
+  { to: '/mas/conteo', label: 'Conteo de caja', desc: 'Comparar efectivo/alias/QR/PosNET contra lo esperado', icon: CalculatorIcon },
   { to: '/mas/recetas', label: 'Costos y recetas', desc: 'Ingredientes, márgenes, importar Excel', icon: ChefHat },
   { to: '/mas/retiro', label: 'Retiro personal', desc: 'Nuestro sueldo del mes', icon: PiggyBank },
   { to: '/mas/ajustes', label: 'Ajustes', desc: 'Medios de pago, sobres, punto de equilibrio', icon: Settings },

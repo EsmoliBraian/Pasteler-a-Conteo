@@ -88,10 +88,10 @@ function ImportSection({ onImported }: { onImported: () => void }) {
   const [open, setOpen] = useState(false)
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
     setResult(null)
-    const p = await parseFudoExcel(file)
+    const p = await parseFudoExcel(files)
     setParsed(p)
   }
 
@@ -115,13 +115,14 @@ function ImportSection({ onImported }: { onImported: () => void }) {
       {open && (
         <div className="space-y-2">
           <p className="text-xs text-stone-400">
-            Buscamos hojas "Ingredientes", "Subingredientes", "Productos" y "Recetas", con columnas tipo
-            Nombre/Unidad/Precio/Cantidad. Si no reconoce alguna, revisá los encabezados de esa hoja.
+            Fudo exporta dos archivos: uno con "Ingredientes" + "Subingredientes" y otro con "Productos" +
+            "Recetas". Podés elegir los dos juntos (Ctrl/Cmd+click) o subirlos uno por vez, las veces que
+            necesites.
           </p>
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-stone-300 py-4 text-sm font-medium text-stone-500 active:bg-stone-50 dark:border-stone-700 dark:text-stone-400 dark:active:bg-stone-800">
             <Upload size={18} />
-            Elegir archivo .xlsx
-            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFile} />
+            Elegir archivo(s) .xls/.xlsx
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" multiple className="hidden" onChange={handleFile} />
           </label>
         </div>
       )}
@@ -131,7 +132,9 @@ function ImportSection({ onImported }: { onImported: () => void }) {
           <p className="text-sm font-medium text-stone-700 dark:text-stone-200">Vista previa antes de importar:</p>
           <ul className="text-sm text-stone-600 dark:text-stone-300">
             <li>{parsed.ingredients.length} ingredientes</li>
-            <li>{parsed.subIngredients.length} subingredientes</li>
+            <li>
+              {parsed.subIngredients.length} subingredientes ({parsed.subIngredientLinks.length} líneas de composición)
+            </li>
             <li>{parsed.products.length} productos</li>
             <li>{parsed.recipeLinks.length} líneas de receta</li>
           </ul>

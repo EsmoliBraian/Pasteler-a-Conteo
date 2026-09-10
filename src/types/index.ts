@@ -109,9 +109,31 @@ export type WithdrawalCategory = {
 export type Withdrawal = {
   id: string
   withdrawal_category_id: string | null
+  payment_method_id: string | null
   amount: number
   description: string | null
   withdrawal_date: string
+  created_at: string
+}
+
+export type ExpenseOrigin = 'local' | 'personal'
+
+export type Expense = {
+  id: string
+  amount: number
+  description: string | null
+  origin: ExpenseOrigin
+  payment_method_id: string | null
+  expense_date: string
+  created_at: string
+}
+
+export type CashCount = {
+  id: string
+  payment_method_id: string
+  expected_amount: number
+  counted_amount: number
+  count_date: string
   created_at: string
 }
 

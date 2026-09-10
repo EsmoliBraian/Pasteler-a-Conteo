@@ -1,4 +1,4 @@
-import type { Debt, DebtInstallment, Envelope, PaymentMethod, SalesEntry } from '../types'
+import type { Debt, DebtInstallment, Envelope, Expense, PaymentMethod, SalesEntry, Withdrawal } from '../types'
 import { daysInMonth, toISODate, todayISO } from './format'
 
 export function addMonthsClamped(iso: string, n: number): string {
@@ -79,12 +79,20 @@ function currentPeriodOf() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-export function upcomingInstallments(installments: DebtInstallment[], withinDays = 5) {
+export function upcomingInstallments(
+  installments: DebtInstallment[],
+  opts: { windowDays?: number; urgentDays?: number } = {}
+) {
+  const { windowDays = 20, urgentDays = 5 } = opts
   const today = todayISO()
   return installments
-    .filter((i) => i.status === 'pendiente' && i.due_date >= today)
+    .filter((i) => i.status === 'pendiente')
+    .map((i) => ({ ...i, daysUntil: daysBetween(today, i.due_date) }))
+    // incluye vencidas (daysUntil negativo, para no esconder una cuota impaga) y
+    // las que vencen dentro de la ventana pedida
+    .filter((i) => i.daysUntil <= windowDays)
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
-    .map((i) => ({ ...i, urgent: daysBetween(today, i.due_date) <= withinDays }))
+    .map((i) => ({ ...i, urgent: i.daysUntil <= urgentDays }))
 }
 
 function daysBetween(aISO: string, bISO: string) {
@@ -95,4 +103,28 @@ function daysBetween(aISO: string, bISO: string) {
 
 export function profitPct(envelopes: Envelope[]) {
   return envelopes.filter((e) => e.is_profit).reduce((sum, e) => sum + e.pct, 0)
+}
+
+/**
+ * Cuánto "debería" haber acumulado en un medio de pago: neto vendido por ese
+ * medio, menos los gastos y retiros que se marcaron explícitamente como
+ * salidos de ese medio. No conoce gastos fijos/deudas (esos se pagan aparte,
+ * no de la plata física en efectivo/alias/posnet/QR).
+ */
+export function expectedBalanceByMethod(
+  paymentMethodId: string,
+  salesEntries: SalesEntry[],
+  expenses: Expense[],
+  withdrawals: Withdrawal[]
+) {
+  const sales = salesEntries
+    .filter((e) => e.payment_method_id === paymentMethodId)
+    .reduce((sum, e) => sum + e.net_amount, 0)
+  const spent = expenses
+    .filter((e) => e.payment_method_id === paymentMethodId)
+    .reduce((sum, e) => sum + e.amount, 0)
+  const withdrawn = withdrawals
+    .filter((w) => w.payment_method_id === paymentMethodId)
+    .reduce((sum, w) => sum + w.amount, 0)
+  return sales - spent - withdrawn
 }

@@ -41,11 +41,18 @@ function toNumber(raw: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function findSheet(workbook: XLSXType.WorkBook, keywords: string[]): string | null {
+// Busca una hoja por nombre, evitando falsos positivos como "Subproductos"
+// cuando buscamos "Productos" (o "Subingredientes" cuando buscamos "Ingredientes").
+function findSheet(workbook: XLSXType.WorkBook, keywords: string[], excludeContains: string[] = []): string | null {
   const names = workbook.SheetNames
+  const excluded = (n: string) => excludeContains.some((x) => normalize(n).includes(x))
   for (const kw of keywords) {
-    const found = names.find((n) => normalize(n).includes(kw))
-    if (found) return found
+    const exact = names.find((n) => !excluded(n) && normalize(n) === kw)
+    if (exact) return exact
+  }
+  for (const kw of keywords) {
+    const partial = names.find((n) => !excluded(n) && normalize(n).includes(kw))
+    if (partial) return partial
   }
   return null
 }
@@ -63,101 +70,137 @@ function sheetRows(
 }
 
 export type ParsedIngredient = { name: string; unit: Unit; price: number }
-export type ParsedSubIngredient = { name: string; unit: Unit; yieldQty: number }
 export type ParsedProduct = { name: string; price: number }
 export type ParsedRecipeLink = { parent: string; component: string; quantity: number }
+export type ParsedSubIngredientLink = { parent: string; component: string; quantity: number }
 
 export type ParsedImport = {
   ingredients: ParsedIngredient[]
-  subIngredients: ParsedSubIngredient[]
+  subIngredients: { name: string; unit: Unit }[]
+  subIngredientLinks: ParsedSubIngredientLink[]
   products: ParsedProduct[]
   recipeLinks: ParsedRecipeLink[]
   warnings: string[]
 }
 
-export async function parseFudoExcel(file: File): Promise<ParsedImport> {
+/**
+ * Fudo exporta esto en dos archivos separados:
+ * - "ingredientes.xls": hojas "Ingredientes" y "Subingredientes"
+ * - "productos.xls": hojas "Productos" y "Recetas" (además de otras que no usamos)
+ *
+ * La hoja "Subingredientes" no es una lista de subingredientes con su propio
+ * costo: es la composición de un ingrediente "compuesto" (ej. "Cookie") hecho de
+ * otros ingredientes de la hoja "Ingredientes" (ej. "Harina", "Huevo"). La
+ * columna "Ingrediente" es el compuesto y "Subingrediente" es el componente.
+ * Por eso: cualquier nombre que aparezca como "Ingrediente" (compuesto) en esa
+ * hoja se importa como sub-receta (con rendimiento 1, ya que las cantidades ya
+ * están expresadas para producir 1 unidad), y se excluye de la lista de
+ * ingredientes simples para no duplicarlo.
+ */
+export async function parseFudoExcel(files: File[]): Promise<ParsedImport> {
   // Import dinámico: la librería de Excel pesa bastante y solo hace falta acá.
   const xlsx = await import('xlsx')
-  const buffer = await file.arrayBuffer()
-  const workbook = xlsx.read(buffer, { type: 'array' })
   const warnings: string[] = []
 
-  const ingredients: ParsedIngredient[] = []
-  const ingredientsSheet = findSheet(workbook, ['ingrediente'])
-  if (ingredientsSheet) {
-    const { headers, rows } = sheetRows(xlsx, workbook, ingredientsSheet)
-    const nameCol = findColumn(headers, ['nombre', 'ingrediente', 'insumo'])
-    const unitCol = findColumn(headers, ['unidad', 'medida', 'um'])
-    const priceCol = findColumn(headers, ['precio', 'costo', 'valor'])
-    if (nameCol === -1) warnings.push(`Hoja "${ingredientsSheet}": no encontré columna de nombre.`)
-    else {
-      for (const row of rows) {
-        const name = String(row[nameCol] ?? '').trim()
-        if (!name) continue
-        ingredients.push({
-          name,
-          unit: unitCol !== -1 ? detectUnit(row[unitCol]) : 'kg',
-          price: priceCol !== -1 ? toNumber(row[priceCol]) : 0,
-        })
+  const rawIngredients: ParsedIngredient[] = []
+  const subIngredientLinks: ParsedSubIngredientLink[] = []
+  const products: ParsedProduct[] = []
+  const recipeLinks: ParsedRecipeLink[] = []
+
+  for (const file of files) {
+    const buffer = await file.arrayBuffer()
+    const workbook = xlsx.read(buffer, { type: 'array' })
+
+    const ingredientsSheet = findSheet(workbook, ['ingredientes', 'ingrediente'], ['sub'])
+    if (ingredientsSheet) {
+      const { headers, rows } = sheetRows(xlsx, workbook, ingredientsSheet)
+      const nameCol = findColumn(headers, ['nombre', 'ingrediente', 'insumo'])
+      const unitCol = findColumn(headers, ['unidad', 'medida', 'um'])
+      const priceCol = findColumn(headers, ['costo', 'precio', 'valor'])
+      if (nameCol === -1) warnings.push(`"${file.name}", hoja "${ingredientsSheet}": no encontré columna de nombre.`)
+      else {
+        for (const row of rows) {
+          const name = String(row[nameCol] ?? '').trim()
+          if (!name) continue
+          rawIngredients.push({
+            name,
+            unit: unitCol !== -1 ? detectUnit(row[unitCol]) : 'kg',
+            price: priceCol !== -1 ? toNumber(row[priceCol]) : 0,
+          })
+        }
       }
     }
-  } else warnings.push('No encontré una hoja "Ingredientes" en el archivo.')
 
-  const subIngredients: ParsedSubIngredient[] = []
-  const subSheet = findSheet(workbook, ['subingrediente', 'sub ingrediente', 'subinsumo'])
-  if (subSheet) {
-    const { headers, rows } = sheetRows(xlsx, workbook, subSheet)
-    const nameCol = findColumn(headers, ['nombre', 'subingrediente', 'preparacion', 'elaboracion'])
-    const unitCol = findColumn(headers, ['unidad', 'medida', 'um'])
-    const yieldCol = findColumn(headers, ['rendimiento', 'produccion', 'rinde', 'cantidad producida'])
-    if (nameCol !== -1) {
-      for (const row of rows) {
-        const name = String(row[nameCol] ?? '').trim()
-        if (!name) continue
-        subIngredients.push({
-          name,
-          unit: unitCol !== -1 ? detectUnit(row[unitCol]) : 'kg',
-          yieldQty: yieldCol !== -1 ? toNumber(row[yieldCol]) || 1 : 1,
-        })
+    const subSheet = findSheet(workbook, ['subingredientes', 'subingrediente'])
+    if (subSheet) {
+      const { headers, rows } = sheetRows(xlsx, workbook, subSheet)
+      const parentCol = findColumn(headers, ['ingrediente', 'subingrediente', 'preparacion', 'elaboracion'])
+      const componentCol = findColumn(headers, ['subingrediente', 'ingrediente', 'insumo', 'componente'])
+      const qtyCol = findColumn(headers, ['cantidad', 'cant'])
+      if (parentCol === -1 || componentCol === -1 || parentCol === componentCol || qtyCol === -1) {
+        warnings.push(`"${file.name}", hoja "${subSheet}": no pude reconocer sus columnas.`)
+      } else {
+        for (const row of rows) {
+          const parent = String(row[parentCol] ?? '').trim()
+          const component = String(row[componentCol] ?? '').trim()
+          if (!parent || !component) continue
+          subIngredientLinks.push({ parent, component, quantity: toNumber(row[qtyCol]) })
+        }
       }
+    }
+
+    const productsSheet = findSheet(workbook, ['productos', 'producto'], ['sub'])
+    if (productsSheet) {
+      const { headers, rows } = sheetRows(xlsx, workbook, productsSheet)
+      const nameCol = findColumn(headers, ['nombre', 'producto', 'articulo'])
+      const priceCol = findColumn(headers, ['precio de venta', 'precio venta', 'pvp', 'precio'])
+      const activeCol = findColumn(headers, ['activo'])
+      if (nameCol === -1) warnings.push(`"${file.name}", hoja "${productsSheet}": no encontré columna de nombre.`)
+      else {
+        for (const row of rows) {
+          const name = String(row[nameCol] ?? '').trim()
+          if (!name) continue
+          if (activeCol !== -1 && normalize(row[activeCol]) === 'no') continue
+          products.push({ name, price: priceCol !== -1 ? toNumber(row[priceCol]) : 0 })
+        }
+      }
+    }
+
+    const recetasSheet = findSheet(workbook, ['recetas', 'receta'])
+    if (recetasSheet) {
+      const { headers, rows } = sheetRows(xlsx, workbook, recetasSheet)
+      const productCol = findColumn(headers, ['producto', 'articulo'])
+      const subParentCol = findColumn(headers, ['subingrediente', 'elaboracion', 'preparacion'])
+      const componentCol = findColumn(headers, ['ingrediente', 'insumo', 'componente'])
+      const qtyCol = findColumn(headers, ['cantidad', 'cant'])
+      if (componentCol === -1 || qtyCol === -1 || (productCol === -1 && subParentCol === -1)) {
+        warnings.push(`"${file.name}", hoja "${recetasSheet}": no pude reconocer sus columnas.`)
+      } else {
+        for (const row of rows) {
+          const parent = String(row[productCol] ?? row[subParentCol] ?? '').trim()
+          const component = String(row[componentCol] ?? '').trim()
+          if (!parent || !component) continue
+          recipeLinks.push({ parent, component, quantity: toNumber(row[qtyCol]) })
+        }
+      }
+    }
+
+    if (!ingredientsSheet && !subSheet && !productsSheet && !recetasSheet) {
+      warnings.push(`"${file.name}": no reconocí ninguna hoja (Ingredientes/Subingredientes/Productos/Recetas) en este archivo.`)
     }
   }
 
-  const products: ParsedProduct[] = []
-  const productsSheet = findSheet(workbook, ['producto'])
-  if (productsSheet) {
-    const { headers, rows } = sheetRows(xlsx, workbook, productsSheet)
-    const nameCol = findColumn(headers, ['nombre', 'producto', 'articulo'])
-    const priceCol = findColumn(headers, ['precio de venta', 'precio venta', 'pvp', 'precio'])
-    if (nameCol === -1) warnings.push(`Hoja "${productsSheet}": no encontré columna de nombre.`)
-    else {
-      for (const row of rows) {
-        const name = String(row[nameCol] ?? '').trim()
-        if (!name) continue
-        products.push({ name, price: priceCol !== -1 ? toNumber(row[priceCol]) : 0 })
-      }
-    }
-  } else warnings.push('No encontré una hoja "Productos" en el archivo.')
+  const compoundNames = new Set(subIngredientLinks.map((l) => normalize(l.parent)))
+  const ingredients = rawIngredients.filter((i) => !compoundNames.has(normalize(i.name)))
+  const subIngredients = [...compoundNames].map((key) => {
+    const match = rawIngredients.find((i) => normalize(i.name) === key)
+    const original = subIngredientLinks.find((l) => normalize(l.parent) === key)!.parent
+    return { name: original, unit: match?.unit ?? ('un' as Unit) }
+  })
 
-  const recipeLinks: ParsedRecipeLink[] = []
-  const recetasSheet = findSheet(workbook, ['receta'])
-  if (recetasSheet) {
-    const { headers, rows } = sheetRows(xlsx, workbook, recetasSheet)
-    const productCol = findColumn(headers, ['producto', 'articulo'])
-    const subParentCol = findColumn(headers, ['subingrediente', 'elaboracion', 'preparacion'])
-    const componentCol = findColumn(headers, ['ingrediente', 'insumo', 'componente'])
-    const qtyCol = findColumn(headers, ['cantidad', 'cant'])
-    if (componentCol === -1 || qtyCol === -1 || (productCol === -1 && subParentCol === -1)) {
-      warnings.push(`Hoja "${recetasSheet}": no pude reconocer las columnas de producto/ingrediente/cantidad.`)
-    } else {
-      for (const row of rows) {
-        const parent = String(row[productCol] ?? row[subParentCol] ?? '').trim()
-        const component = String(row[componentCol] ?? '').trim()
-        if (!parent || !component) continue
-        recipeLinks.push({ parent, component, quantity: toNumber(row[qtyCol]) })
-      }
-    }
-  } else warnings.push('No encontré una hoja "Recetas" en el archivo.')
+  if (ingredients.length === 0 && subIngredients.length === 0 && products.length === 0 && recipeLinks.length === 0) {
+    warnings.push('No se reconoció ningún dato para importar en los archivos elegidos.')
+  }
 
-  return { ingredients, subIngredients, products, recipeLinks, warnings }
+  return { ingredients, subIngredients, subIngredientLinks, products, recipeLinks, warnings }
 }

@@ -139,6 +139,7 @@ create table if not exists withdrawal_categories (
 create table if not exists withdrawals (
   id uuid primary key default gen_random_uuid(),
   withdrawal_category_id uuid references withdrawal_categories(id),
+  payment_method_id uuid references payment_methods(id),
   amount numeric not null,
   description text,
   withdrawal_date date not null default current_date,
@@ -147,7 +148,31 @@ create table if not exists withdrawals (
 );
 
 -- ----------------------------------------------------------------------------
--- 8. Costos y recetas
+-- 8. Gastos sueltos (del local o personales) y conteo de caja
+-- ----------------------------------------------------------------------------
+create table if not exists expenses (
+  id uuid primary key default gen_random_uuid(),
+  amount numeric not null,
+  description text,
+  origin text not null check (origin in ('local','personal')),
+  payment_method_id uuid references payment_methods(id),
+  expense_date date not null default current_date,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists cash_counts (
+  id uuid primary key default gen_random_uuid(),
+  payment_method_id uuid not null references payment_methods(id),
+  expected_amount numeric not null,
+  counted_amount numeric not null,
+  count_date date not null default current_date,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now()
+);
+
+-- ----------------------------------------------------------------------------
+-- 9. Costos y recetas
 -- ----------------------------------------------------------------------------
 create table if not exists ingredients (
   id uuid primary key default gen_random_uuid(),
@@ -196,7 +221,7 @@ create table if not exists recipe_items (
 );
 
 -- ----------------------------------------------------------------------------
--- 9. Configuración general (fila única)
+-- 10. Configuración general (fila única)
 -- ----------------------------------------------------------------------------
 create table if not exists app_settings (
   id int primary key default 1,
@@ -217,8 +242,8 @@ begin
   for t in select unnest(array[
     'payment_methods','envelopes','sales_entries','debts','debt_installments',
     'envelope_transactions','fixed_expenses','fixed_expense_payments',
-    'withdrawal_categories','withdrawals','ingredients','sub_ingredients',
-    'sub_ingredient_items','products','recipe_items','app_settings'
+    'withdrawal_categories','withdrawals','expenses','cash_counts','ingredients',
+    'sub_ingredients','sub_ingredient_items','products','recipe_items','app_settings'
   ])
   loop
     execute format('alter table %I enable row level security;', t);

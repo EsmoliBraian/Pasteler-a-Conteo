@@ -55,6 +55,14 @@ ya viene deshabilitado por defecto en un proyecto nuevo).
 Vas a usar estos dos valores en dos lugares: tu `.env` local (para probar en tu PC) y
 los secrets de GitHub Actions (para que la app publicada funcione).
 
+### 1.4. Si el proyecto de Supabase ya estaba creado antes de "Gastos" y "Conteo de caja"
+
+Si ya habías corrido `schema.sql` en una versión anterior de la app, correr todo el
+archivo de nuevo no alcanza para agregar las tablas nuevas de golpe con la columna que
+se sumó a `withdrawals`. Corré una vez, en SQL Editor, el contenido de
+[`supabase/migrations/2026-09-10-gastos-conteo.sql`](supabase/migrations/2026-09-10-gastos-conteo.sql).
+Si estás arrancando de cero, no hace falta: ya está todo incluido en `schema.sql`.
+
 ## 2. Probar en tu computadora (opcional)
 
 ```bash
@@ -124,20 +132,31 @@ celular sin recargar.
   comisión y una cantidad de días de acreditación (editables en Ajustes), y el reparto
   en sobres se calcula sobre lo que efectivamente entra a caja.
 - **Los sobres son la única fuente de verdad del saldo**: cada ingreso (reparto de una
-  venta) y cada egreso (pago de un gasto fijo, una cuota, un retiro, o un movimiento
-  manual) queda registrado como un movimiento. El saldo de un sobre es la suma de sus
-  movimientos, nunca un número que se edita a mano.
+  venta) y cada egreso (pago de un gasto fijo, una cuota, un retiro, un gasto) queda
+  registrado como un movimiento. El saldo de un sobre es la suma de sus movimientos,
+  nunca un número que se edita a mano. La pantalla de Sobres solo muestra el saldo de
+  cada uno (sin historial ni carga manual de movimientos, a pedido).
 - **La ganancia del mes** se calcula como el neto del mes multiplicado por el
   porcentaje de los sobres marcados como "ganancia" (por defecto, Retiro + Reservas =
   38%). Si cambiás los porcentajes de los sobres en Ajustes, este cálculo se ajusta
   solo.
-- **Importar desde Excel** (en Costos y recetas) busca hojas llamadas "Ingredientes",
-  "Subingredientes", "Productos" y "Recetas", con columnas de tipo
-  Nombre/Unidad/Precio/Cantidad. Como no tenemos un archivo real de Fudo a mano para
-  probar el formato exacto, la importación reconoce varios nombres de columna
-  parecidos y muestra una vista previa con avisos antes de guardar nada — si tu
-  archivo no matchea, es cuestión de renombrar los encabezados de esa hoja. Cargar todo
-  a mano desde la app también funciona perfecto si preferís no pelear con el Excel.
+- **Gastos** (en Más → Gastos) es la forma rápida de cargar cualquier gasto suelto,
+  marcando si fue del local o personal (mío/de mi novia). Ambos tipos descuentan de
+  "cuánto podemos retirar" — así lo pidió Braian; si en la práctica se siente raro que
+  un gasto del local reste del retiro personal en vez de, por ejemplo, del sobre de
+  Insumos, es cuestión de avisar y se cambia el destino.
+- **Conteo de caja** (en Más → Conteo de caja) compara, para cada medio de pago, lo
+  que "debería" haber (neto vendido por ese medio menos los gastos/retiros marcados
+  como salidos de ahí) contra lo que efectivamente hay contado a mano. No tiene en
+  cuenta gastos fijos ni cuotas de deuda, que no salen de la plata física del día a
+  día.
+- **Importar desde Excel** (en Costos y recetas) está calibrado contra archivos reales
+  de Fudo: éste exporta dos archivos separados, uno con hojas "Ingredientes" +
+  "Subingredientes" y otro con "Productos" + "Recetas" — se pueden subir juntos o de a
+  uno. La hoja "Subingredientes" de Fudo es la composición de un ingrediente compuesto
+  (ej. "Cookie" hecha de harina, huevo, etc.), no una lista con nombre/rendimiento
+  propio — la app lo reconoce así automáticamente. Los productos con "Activo = No" se
+  ignoran. Siempre se muestra una vista previa con avisos antes de guardar nada.
 
 ## Estructura del proyecto
 
@@ -149,7 +168,8 @@ src/
   pages/        una página por sección de la app
   types/        tipos TypeScript que reflejan las tablas de Supabase
 supabase/
-  schema.sql    todo el esquema de base de datos + datos precargados
+  schema.sql    todo el esquema de base de datos + datos precargados (para empezar de cero)
+  migrations/   cambios incrementales para un proyecto de Supabase ya existente
 .github/workflows/
   deploy.yml    build y deploy automático a GitHub Pages
 ```

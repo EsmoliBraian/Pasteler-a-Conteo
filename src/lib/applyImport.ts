@@ -25,7 +25,7 @@ export async function applyFudoImport(parsed: ParsedImport, onProgress?: (msg: s
     const { error } = await supabase
       .from('sub_ingredients')
       .upsert(
-        parsed.subIngredients.map((s) => ({ name: s.name, unit: s.unit, yield_quantity: s.yieldQty, updated_at: now })),
+        parsed.subIngredients.map((s) => ({ name: s.name, unit: s.unit, yield_quantity: 1, updated_at: now })),
         { onConflict: 'name' }
       )
     if (error) warnings.push(`Subingredientes: ${error.message}`)
@@ -42,7 +42,7 @@ export async function applyFudoImport(parsed: ParsedImport, onProgress?: (msg: s
     if (error) warnings.push(`Productos: ${error.message}`)
   }
 
-  if (parsed.recipeLinks.length) {
+  if (parsed.subIngredientLinks.length || parsed.recipeLinks.length) {
     onProgress?.('Vinculando recetas…')
     const [{ data: ingredients }, { data: subIngredients }, { data: products }] = await Promise.all([
       supabase.from('ingredients').select('id,name'),
@@ -53,6 +53,33 @@ export async function applyFudoImport(parsed: ParsedImport, onProgress?: (msg: s
     const subByName = new Map((subIngredients ?? []).map((s) => [normalizeName(s.name), s.id as string]))
     const productByName = new Map((products ?? []).map((p) => [normalizeName(p.name), p.id as string]))
 
+    // Composición de los subingredientes (ej. "Cookie" = Harina + Huevo + ...)
+    const subByParent = new Map<string, ParsedImport['subIngredientLinks']>()
+    for (const link of parsed.subIngredientLinks) {
+      const key = normalizeName(link.parent)
+      if (!subByParent.has(key)) subByParent.set(key, [])
+      subByParent.get(key)!.push(link)
+    }
+    for (const [parentKey, links] of subByParent) {
+      const subId = subByName.get(parentKey)
+      if (!subId) {
+        warnings.push(`No encontré el subingrediente "${links[0].parent}" para vincular su composición.`)
+        continue
+      }
+      const rows: { sub_ingredient_id: string; ingredient_id: string; quantity: number }[] = []
+      for (const link of links) {
+        const ingId = ingByName.get(normalizeName(link.component))
+        if (ingId) rows.push({ sub_ingredient_id: subId, ingredient_id: ingId, quantity: link.quantity })
+        else warnings.push(`No encontré el ingrediente "${link.component}" (composición de "${link.parent}").`)
+      }
+      await supabase.from('sub_ingredient_items').delete().eq('sub_ingredient_id', subId)
+      if (rows.length) {
+        const { error } = await supabase.from('sub_ingredient_items').insert(rows)
+        if (error) warnings.push(`Composición de "${links[0].parent}": ${error.message}`)
+      }
+    }
+
+    // Recetas de productos (y, si el archivo las mezcla ahí, de subingredientes)
     const byParent = new Map<string, ParsedImport['recipeLinks']>()
     for (const link of parsed.recipeLinks) {
       const key = normalizeName(link.parent)
@@ -81,8 +108,7 @@ export async function applyFudoImport(parsed: ParsedImport, onProgress?: (msg: s
       } else if (subId) {
         const rows: { sub_ingredient_id: string; ingredient_id: string; quantity: number }[] = []
         for (const link of links) {
-          const compKey = normalizeName(link.component)
-          const ingId = ingByName.get(compKey)
+          const ingId = ingByName.get(normalizeName(link.component))
           if (ingId) rows.push({ sub_ingredient_id: subId, ingredient_id: ingId, quantity: link.quantity })
           else warnings.push(`No encontré el ingrediente "${link.component}" (subreceta de "${link.parent}").`)
         }

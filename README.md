@@ -138,6 +138,14 @@ celular sin recargar.
   registrado como un movimiento. El saldo de un sobre es la suma de sus movimientos,
   nunca un número que se edita a mano. La pantalla de Sobres solo muestra el saldo de
   cada uno (sin historial ni carga manual de movimientos, a pedido).
+- **Ajustar saldo** (en Sobres, un link chico bajo cada sobre): para cuando el negocio
+  no arranca de cero — si venías pagando cosas por fuera de la app antes de empezar a
+  usarla, poné cuál es el saldo real de un sobre y la diferencia con lo que calcula el
+  sistema queda registrada como un único movimiento de ajuste.
+- **Medio de pago en gastos fijos y cuotas de deuda**: al marcar un gasto fijo o una
+  cuota como pagada, se puede elegir con qué medio se pagó. Eso alimenta el Conteo de
+  caja, que ahora también resta gastos fijos y cuotas del saldo esperado de cada medio
+  (antes solo restaba Gastos y Retiros).
 - **La ganancia del mes** se calcula como el neto del mes multiplicado por el
   porcentaje de los sobres marcados como "ganancia" (por defecto, Retiro + Reservas =
   38%). Si cambiás los porcentajes de los sobres en Ajustes, este cálculo se ajusta

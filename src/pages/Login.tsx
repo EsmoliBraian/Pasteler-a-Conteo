@@ -19,14 +19,14 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center bg-stone-50 px-6 dark:bg-stone-950">
+    <div className="flex min-h-svh w-full items-center justify-center bg-neutral-50 px-6 dark:bg-neutral-950">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-700 text-2xl font-bold text-white">
             $
           </div>
-          <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-50">Caja Pastelería</h1>
-          <p className="text-sm text-stone-500 dark:text-stone-400">Ingresá con tu cuenta</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Caja Pastelería</h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Ingresá con tu cuenta</p>
         </div>
         <div className="space-y-3">
           <TextInput

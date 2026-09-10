@@ -121,9 +121,9 @@ export default function Dashboard() {
       <PageHeader title="Panel principal" subtitle={formatDate(today)} />
       <div className="space-y-4 p-4">
         <Card className="space-y-1">
-          <p className="text-xs font-medium text-stone-500 dark:text-stone-400">Ganancia del mes a la fecha</p>
-          <p className="text-3xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(gananciaMes)}</p>
-          <p className="text-xs text-stone-400">
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Ganancia del mes a la fecha</p>
+          <p className="text-3xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(gananciaMes)}</p>
+          <p className="text-xs text-neutral-400">
             Proyección al cierre: {formatMoney(proyeccion)}
             {daysWithSalesThisMonth > 0 && daysWithSalesThisMonth < totalDaysMonth && (
               <> (con {daysWithSalesThisMonth} día{daysWithSalesThisMonth === 1 ? '' : 's'} cargado{daysWithSalesThisMonth === 1 ? '' : 's'} este mes)</>
@@ -138,19 +138,19 @@ export default function Dashboard() {
               const c = latestCountByMethod.get(m.id)
               return (
                 <div key={m.id}>
-                  <p className="text-xs text-stone-500 dark:text-stone-400">{m.name}</p>
-                  <p className="text-lg font-bold tabular-nums text-stone-900 dark:text-stone-50">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{m.name}</p>
+                  <p className="text-lg font-bold tabular-nums text-neutral-900 dark:text-neutral-50">
                     {c ? formatMoneyCompact(c.counted_amount) : '—'}
                   </p>
-                  {c && <p className="text-[11px] text-stone-400">{formatDate(c.count_date)}</p>}
+                  {c && <p className="text-[11px] text-neutral-400">{formatDate(c.count_date)}</p>}
                 </div>
               )
             })}
           </div>
-          <div className="border-t border-stone-100 pt-2 dark:border-stone-800">
+          <div className="border-t border-neutral-100 pt-2 dark:border-neutral-800">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-stone-700 dark:text-stone-300">Total en mano</span>
-              <span className="text-lg font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(totalOnHand)}</span>
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Total en mano</span>
+              <span className="text-lg font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(totalOnHand)}</span>
             </div>
             {pctComprometido !== null ? (
               <p
@@ -159,14 +159,14 @@ export default function Dashboard() {
                     ? 'font-semibold text-red-600 dark:text-red-400'
                     : pctComprometido >= 70
                       ? 'text-amber-600 dark:text-amber-400'
-                      : 'text-stone-400'
+                      : 'text-neutral-400'
                 }`}
               >
                 {pctComprometido.toFixed(0)}% ya tiene destino este mes ({formatMoney(monthlyCommitments)} en gastos fijos +
                 cuotas)
               </p>
             ) : (
-              <p className="text-xs text-stone-400">Cargá un conteo en Más → Conteo de caja para ver esto.</p>
+              <p className="text-xs text-neutral-400">Cargá un conteo en Más → Conteo de caja para ver esto.</p>
             )}
           </div>
         </Card>
@@ -194,7 +194,7 @@ export default function Dashboard() {
 
         <Card>
           <SectionTitle>Últimos 14 días</SectionTitle>
-          <div className="mb-2 flex gap-3 text-xs text-stone-500 dark:text-stone-400">
+          <div className="mb-2 flex gap-3 text-xs text-neutral-500 dark:text-neutral-400">
             <span className="flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full" style={{ background: STATUS_GOOD }} /> Superó equilibrio
             </span>
@@ -235,13 +235,13 @@ export default function Dashboard() {
 
         <div>
           <SectionTitle>Sobres</SectionTitle>
-          <Card className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
+          <Card className="divide-y divide-neutral-100 p-0 dark:divide-neutral-800">
             {envelopes.map((e) => {
               const balance = envelopeBalances.get(e.id) ?? 0
               return (
                 <div key={e.id} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-sm text-stone-600 dark:text-stone-300">{e.name}</span>
-                  <span className={`font-semibold tabular-nums ${balance < 0 ? 'text-red-600 dark:text-red-400' : 'text-stone-900 dark:text-stone-50'}`}>
+                  <span className="text-sm text-neutral-600 dark:text-neutral-300">{e.name}</span>
+                  <span className={`font-semibold tabular-nums ${balance < 0 ? 'text-red-600 dark:text-red-400' : 'text-neutral-900 dark:text-neutral-50'}`}>
                     {formatMoney(balance)}
                   </span>
                 </div>
@@ -252,42 +252,42 @@ export default function Dashboard() {
 
         <Card className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Deuda pendiente total</span>
-            <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(totalDebtPending)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Deuda pendiente total</span>
+            <span className="text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(totalDebtPending)}</span>
           </div>
           {nextDue && (
-            <p className={`text-xs ${nextDue.urgent ? 'font-semibold text-red-600 dark:text-red-400' : 'text-stone-400'}`}>
+            <p className={`text-xs ${nextDue.urgent ? 'font-semibold text-red-600 dark:text-red-400' : 'text-neutral-400'}`}>
               Próximo vencimiento: {formatDate(nextDue.due_date)} · {formatMoney(nextDue.amount)}
             </p>
           )}
-          {!nextDue && <p className="text-xs text-stone-400">Sin cuotas pendientes.</p>}
+          {!nextDue && <p className="text-xs text-neutral-400">Sin cuotas pendientes.</p>}
         </Card>
 
         <Card className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Tarjetas de crédito pendientes</span>
-            <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(totalCardPending)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Tarjetas de crédito pendientes</span>
+            <span className="text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(totalCardPending)}</span>
           </div>
           {nextCardDue ? (
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-neutral-400">
               Próximo vencimiento: {formatDate(nextCardDue.due_date)} · {formatMoney(nextCardDue.amount)}
             </p>
           ) : (
-            <p className="text-xs text-stone-400">Sin compras pendientes de pago.</p>
+            <p className="text-xs text-neutral-400">Sin compras pendientes de pago.</p>
           )}
         </Card>
 
         <Card className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Podemos retirar este mes</span>
-            <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(retirable)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Podemos retirar este mes</span>
+            <span className="text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(retirable)}</span>
           </div>
-          <p className="text-xs text-stone-400">Ya asignado en el sobre de Retiro, sin comprometer gastos fijos ({formatMoney(fixedExpensesTotal)}) ni cuotas de deuda.</p>
-          <div className="flex items-center justify-between border-t border-stone-100 pt-2 dark:border-stone-800">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Retiro sano proyectado (mes completo)</span>
-            <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(retiroSanoProyectado)}</span>
+          <p className="text-xs text-neutral-400">Ya asignado en el sobre de Retiro, sin comprometer gastos fijos ({formatMoney(fixedExpensesTotal)}) ni cuotas de deuda.</p>
+          <div className="flex items-center justify-between border-t border-neutral-100 pt-2 dark:border-neutral-800">
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Retiro sano proyectado (mes completo)</span>
+            <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(retiroSanoProyectado)}</span>
           </div>
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-neutral-400">
             {retiroPct}% de la venta neta, proyectada al ritmo de los {daysWithSalesThisMonth || 0} días de ventas cargados
             este mes.
           </p>

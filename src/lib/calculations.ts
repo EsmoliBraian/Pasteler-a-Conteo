@@ -1,4 +1,13 @@
-import type { Debt, DebtInstallment, Envelope, Expense, PaymentMethod, SalesEntry, Withdrawal } from '../types'
+import type {
+  Debt,
+  DebtInstallment,
+  Envelope,
+  Expense,
+  FixedExpensePayment,
+  PaymentMethod,
+  SalesEntry,
+  Withdrawal,
+} from '../types'
 import { daysInMonth, toISODate, todayISO } from './format'
 
 export function addMonthsClamped(iso: string, n: number): string {
@@ -133,7 +142,9 @@ export function expectedBalanceByMethod(
   paymentMethodId: string,
   salesEntries: SalesEntry[],
   expenses: Expense[],
-  withdrawals: Withdrawal[]
+  withdrawals: Withdrawal[],
+  fixedExpensePayments: FixedExpensePayment[] = [],
+  debtInstallments: DebtInstallment[] = []
 ) {
   const sales = salesEntries
     .filter((e) => e.payment_method_id === paymentMethodId)
@@ -144,5 +155,11 @@ export function expectedBalanceByMethod(
   const withdrawn = withdrawals
     .filter((w) => w.payment_method_id === paymentMethodId)
     .reduce((sum, w) => sum + w.amount, 0)
-  return sales - spent - withdrawn
+  const fixedPaid = fixedExpensePayments
+    .filter((p) => p.payment_method_id === paymentMethodId)
+    .reduce((sum, p) => sum + p.amount, 0)
+  const installmentsPaid = debtInstallments
+    .filter((i) => i.payment_method_id === paymentMethodId)
+    .reduce((sum, i) => sum + (i.paid_amount ?? i.amount), 0)
+  return sales - spent - withdrawn - fixedPaid - installmentsPaid
 }

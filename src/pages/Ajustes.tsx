@@ -36,14 +36,14 @@ export default function Ajustes() {
               ) : (
                 <Card key={pm.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-medium text-stone-800 dark:text-stone-200">{pm.name}</p>
-                    <p className="text-xs text-stone-400">
+                    <p className="font-medium text-neutral-800 dark:text-neutral-200">{pm.name}</p>
+                    <p className="text-xs text-neutral-400">
                       Comisión {pm.commission_pct}% · acredita en {pm.settlement_days} días
                     </p>
                   </div>
                   <button
                     onClick={() => setEditingMethod(pm.id)}
-                    className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                    className="rounded-lg p-2 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                   >
                     <Pencil size={16} />
                   </button>
@@ -67,12 +67,12 @@ export default function Ajustes() {
               ) : (
                 <Card key={e.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-medium text-stone-800 dark:text-stone-200">{e.name}</p>
-                    <p className="text-xs text-stone-400">{e.pct}%</p>
+                    <p className="font-medium text-neutral-800 dark:text-neutral-200">{e.name}</p>
+                    <p className="text-xs text-neutral-400">{e.pct}%</p>
                   </div>
                   <button
                     onClick={() => setEditingEnvelope(e.id)}
-                    className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                    className="rounded-lg p-2 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                   >
                     <Pencil size={16} />
                   </button>
@@ -109,13 +109,13 @@ function EditMethodForm({ method, onDone }: { method: PaymentMethod; onDone: () 
 
   return (
     <Card className="space-y-2">
-      <p className="font-medium text-stone-800 dark:text-stone-200">{method.name}</p>
+      <p className="font-medium text-neutral-800 dark:text-neutral-200">{method.name}</p>
       <div>
-        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Comisión (%)</label>
+        <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Comisión (%)</label>
         <TextInput type="number" step="0.1" value={commission} onChange={(e) => setCommission(e.target.value)} />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Días de acreditación</label>
+        <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Días de acreditación</label>
         <TextInput type="number" value={days} onChange={(e) => setDays(e.target.value)} />
       </div>
       <div className="flex gap-2">
@@ -143,7 +143,7 @@ function EditEnvelopeForm({ envelope, onDone }: { envelope: Envelope; onDone: ()
 
   return (
     <Card className="space-y-2">
-      <p className="font-medium text-stone-800 dark:text-stone-200">{envelope.name}</p>
+      <p className="font-medium text-neutral-800 dark:text-neutral-200">{envelope.name}</p>
       <TextInput type="number" step="0.1" value={pct} onChange={(e) => setPct(e.target.value)} />
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={onDone}>
@@ -179,12 +179,12 @@ function GeneralSettings({ settings, onSaved }: { settings: AppSettings; onSaved
       <SectionTitle>Punto de equilibrio</SectionTitle>
       <Card className="space-y-3">
         <div>
-          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Punto de equilibrio mensual</label>
+          <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Punto de equilibrio mensual</label>
           <MoneyInput value={breakeven} onChange={setBreakeven} />
-          <p className="mt-1 text-xs text-stone-400">Diario: {formatMoney(breakeven / 30)} (referencial)</p>
+          <p className="mt-1 text-xs text-neutral-400">Diario: {formatMoney(breakeven / 30)} (referencial)</p>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Costo de insumos estimado (% de venta)</label>
+          <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Costo de insumos estimado (% de venta)</label>
           <TextInput type="number" step="0.1" value={insumosPct} onChange={(e) => setInsumosPct(e.target.value)} />
         </div>
         {saved && <Banner tone="good">Guardado ✓</Banner>}

@@ -19,14 +19,14 @@ const Conteo = lazy(() => import('./pages/Conteo'))
 const Ajustes = lazy(() => import('./pages/Ajustes'))
 
 function Loading() {
-  return <div className="flex min-h-[50svh] items-center justify-center text-stone-400">Cargando…</div>
+  return <div className="flex min-h-[50svh] items-center justify-center text-neutral-400">Cargando…</div>
 }
 
 function Gate({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth()
   if (loading) {
     return (
-      <div className="flex min-h-svh items-center justify-center text-stone-400">
+      <div className="flex min-h-svh items-center justify-center text-neutral-400">
         Cargando…
       </div>
     )
@@ -37,17 +37,17 @@ function Gate({ children }: { children: React.ReactNode }) {
 
 function ConfigMissing() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center bg-stone-50 px-6 dark:bg-stone-950">
+    <div className="flex min-h-svh w-full items-center justify-center bg-neutral-50 px-6 dark:bg-neutral-950">
       <div className="max-w-sm space-y-3 text-center">
         <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-700 text-2xl font-bold text-white">
           !
         </div>
-        <h1 className="text-lg font-bold text-stone-900 dark:text-stone-50">Falta configurar Supabase</h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400">
-          No encontré <code className="rounded bg-stone-200 px-1 dark:bg-stone-800">VITE_SUPABASE_URL</code> ni{' '}
-          <code className="rounded bg-stone-200 px-1 dark:bg-stone-800">VITE_SUPABASE_ANON_KEY</code>. En desarrollo local,
-          creá un archivo <code className="rounded bg-stone-200 px-1 dark:bg-stone-800">.env</code> (mirá{' '}
-          <code className="rounded bg-stone-200 px-1 dark:bg-stone-800">.env.example</code>). En producción, cargalas como
+        <h1 className="text-lg font-bold text-neutral-900 dark:text-neutral-50">Falta configurar Supabase</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          No encontré <code className="rounded bg-neutral-200 px-1 dark:bg-neutral-800">VITE_SUPABASE_URL</code> ni{' '}
+          <code className="rounded bg-neutral-200 px-1 dark:bg-neutral-800">VITE_SUPABASE_ANON_KEY</code>. En desarrollo local,
+          creá un archivo <code className="rounded bg-neutral-200 px-1 dark:bg-neutral-800">.env</code> (mirá{' '}
+          <code className="rounded bg-neutral-200 px-1 dark:bg-neutral-800">.env.example</code>). En producción, cargalas como
           secrets de GitHub Actions.
         </p>
       </div>

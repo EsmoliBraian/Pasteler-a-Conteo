@@ -62,6 +62,7 @@ export type DebtInstallment = {
   status: InstallmentStatus
   paid_at: string | null
   paid_amount: number | null
+  payment_method_id: string | null
 }
 
 export type EnvelopeTransactionType =
@@ -96,6 +97,7 @@ export type FixedExpensePayment = {
   fixed_expense_id: string
   period: string
   amount: number
+  payment_method_id: string | null
   paid_at: string
 }
 

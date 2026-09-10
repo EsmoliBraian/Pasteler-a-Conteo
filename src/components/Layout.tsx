@@ -12,14 +12,14 @@ const tabs = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-svh w-full bg-stone-50 dark:bg-stone-950">
+    <div className="flex min-h-svh w-full bg-neutral-50 dark:bg-neutral-950">
       {/* Barra lateral: solo en pantallas medianas/grandes (escritorio) */}
-      <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col border-r border-stone-200 bg-white p-4 md:flex dark:border-stone-800 dark:bg-stone-900">
+      <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col border-r border-neutral-200 bg-white p-4 md:flex dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mb-6 flex items-center gap-2 px-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-700 text-lg font-bold text-white">
             $
           </div>
-          <span className="font-bold text-stone-900 dark:text-stone-50">Caja Pastelería</span>
+          <span className="font-bold text-neutral-900 dark:text-neutral-50">Caja Pastelería</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {tabs.map(({ to, label, icon: Icon, end }) => (
@@ -31,7 +31,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
-                    : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
+                    : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
                 }`
               }
             >
@@ -51,7 +51,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Nav inferior: solo en mobile */}
       <nav
-        className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-md border-t border-stone-200 bg-white/95 backdrop-blur md:hidden dark:border-stone-800 dark:bg-stone-900/95"
+        className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-md border-t border-neutral-200 bg-white/95 backdrop-blur md:hidden dark:border-neutral-800 dark:bg-neutral-900/95"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {tabs.map(({ to, label, icon: Icon, end }) => (
@@ -63,7 +63,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium ${
                 isActive
                   ? 'text-amber-700 dark:text-amber-500'
-                  : 'text-stone-400 dark:text-stone-500'
+                  : 'text-neutral-400 dark:text-neutral-500'
               }`
             }
           >

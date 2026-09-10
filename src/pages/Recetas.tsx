@@ -34,7 +34,7 @@ export default function Recetas() {
       <div className="p-4 pb-2">
         <ImportSection onImported={refetchAll} />
       </div>
-      <div className="flex gap-1 border-b border-stone-200 px-4 dark:border-stone-800">
+      <div className="flex gap-1 border-b border-neutral-200 px-4 dark:border-neutral-800">
         {TABS.map((t) => (
           <button
             key={t}
@@ -42,7 +42,7 @@ export default function Recetas() {
             className={`border-b-2 px-2 py-2 text-sm font-medium ${
               tab === t
                 ? 'border-amber-700 text-amber-700 dark:border-amber-500 dark:text-amber-500'
-                : 'border-transparent text-stone-400'
+                : 'border-transparent text-neutral-400'
             }`}
           >
             {t}
@@ -110,16 +110,16 @@ function ImportSection({ onImported }: { onImported: () => void }) {
     <Card className="space-y-2">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between">
         <SectionTitle>Importar desde Excel (formato Fudo)</SectionTitle>
-        {open ? <ChevronUp size={16} className="text-stone-400" /> : <ChevronDown size={16} className="text-stone-400" />}
+        {open ? <ChevronUp size={16} className="text-neutral-400" /> : <ChevronDown size={16} className="text-neutral-400" />}
       </button>
       {open && (
         <div className="space-y-2">
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-neutral-400">
             Fudo exporta dos archivos: uno con "Ingredientes" + "Subingredientes" y otro con "Productos" +
             "Recetas". Podés elegir los dos juntos (Ctrl/Cmd+click) o subirlos uno por vez, las veces que
             necesites.
           </p>
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-stone-300 py-4 text-sm font-medium text-stone-500 active:bg-stone-50 dark:border-stone-700 dark:text-stone-400 dark:active:bg-stone-800">
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 py-4 text-sm font-medium text-neutral-500 active:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:active:bg-neutral-800">
             <Upload size={18} />
             Elegir archivo(s) .xls/.xlsx
             <input ref={fileRef} type="file" accept=".xlsx,.xls" multiple className="hidden" onChange={handleFile} />
@@ -128,9 +128,9 @@ function ImportSection({ onImported }: { onImported: () => void }) {
       )}
 
       {parsed && (
-        <div className="space-y-2 rounded-xl bg-stone-50 p-3 dark:bg-stone-800">
-          <p className="text-sm font-medium text-stone-700 dark:text-stone-200">Vista previa antes de importar:</p>
-          <ul className="text-sm text-stone-600 dark:text-stone-300">
+        <div className="space-y-2 rounded-xl bg-neutral-50 p-3 dark:bg-neutral-800">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-200">Vista previa antes de importar:</p>
+          <ul className="text-sm text-neutral-600 dark:text-neutral-300">
             <li>{parsed.ingredients.length} ingredientes</li>
             <li>
               {parsed.subIngredients.length} subingredientes ({parsed.subIngredientLinks.length} líneas de composición)
@@ -230,7 +230,7 @@ function IngredientForm({
         <select
           value={unit}
           onChange={(e) => setUnit(e.target.value as Unit)}
-          className="rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          className="rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
         >
           {UNIT_OPTIONS.map((u) => (
             <option key={u} value={u}>
@@ -263,13 +263,13 @@ function IngredientRow({ ingredient, onChanged }: { ingredient: Ingredient; onCh
   return (
     <Card className="flex items-center justify-between py-3">
       <div>
-        <p className="font-medium text-stone-800 dark:text-stone-200">{ingredient.name}</p>
-        <p className="text-xs text-stone-400">
+        <p className="font-medium text-neutral-800 dark:text-neutral-200">{ingredient.name}</p>
+        <p className="text-xs text-neutral-400">
           {formatMoney(ingredient.price_per_unit)} / {ingredient.unit}
         </p>
       </div>
       <div className="flex items-center gap-1">
-        <button onClick={() => setEditing(true)} className="rounded-lg px-3 py-2 text-xs font-medium text-stone-500 active:bg-stone-100 dark:active:bg-stone-800">
+        <button onClick={() => setEditing(true)} className="rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 active:bg-neutral-100 dark:active:bg-neutral-800">
           Editar
         </button>
         <button
@@ -279,7 +279,7 @@ function IngredientRow({ ingredient, onChanged }: { ingredient: Ingredient; onCh
               onChanged()
             }
           }}
-          className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+          className="rounded-lg p-2 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
         >
           <Trash2 size={16} />
         </button>
@@ -325,17 +325,17 @@ function SubingredientesTab({
               className="flex w-full items-center justify-between px-4 py-3 text-left"
             >
               <div>
-                <p className="font-medium text-stone-800 dark:text-stone-200">{sub.name}</p>
-                <p className="text-xs text-stone-400">
+                <p className="font-medium text-neutral-800 dark:text-neutral-200">{sub.name}</p>
+                <p className="text-xs text-neutral-400">
                   Rinde {sub.yield_quantity} {sub.unit}
                 </p>
               </div>
-              <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">
+              <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
                 {formatMoney(cost)}/{sub.unit}
               </span>
             </button>
             {isOpen && (
-              <div className="space-y-2 border-t border-stone-100 px-4 py-3 dark:border-stone-800">
+              <div className="space-y-2 border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
                 <SubIngredientComposition
                   sub={sub}
                   items={subIngredientItems.filter((i) => i.sub_ingredient_id === sub.id)}
@@ -371,7 +371,7 @@ function SubIngredientForm({ onSaved }: { onSaved: () => void }) {
         <select
           value={unit}
           onChange={(e) => setUnit(e.target.value as Unit)}
-          className="rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          className="rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
         >
           {UNIT_OPTIONS.map((u) => (
             <option key={u} value={u}>
@@ -380,7 +380,7 @@ function SubIngredientForm({ onSaved }: { onSaved: () => void }) {
           ))}
         </select>
         <div>
-          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Rinde (cantidad)</label>
+          <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Rinde (cantidad)</label>
           <TextInput type="number" value={yieldQty} onChange={(e) => setYieldQty(Number(e.target.value) || 1)} />
         </div>
       </div>
@@ -419,7 +419,7 @@ function SubIngredientComposition({
         const ing = ingredients.find((i) => i.id === item.ingredient_id)
         return (
           <div key={item.id} className="flex items-center justify-between text-sm">
-            <span className="text-stone-600 dark:text-stone-300">
+            <span className="text-neutral-600 dark:text-neutral-300">
               {ing?.name} · {item.quantity} {ing?.unit}
             </span>
             <button
@@ -427,7 +427,7 @@ function SubIngredientComposition({
                 await supabase.from('sub_ingredient_items').delete().eq('id', item.id)
                 onChanged()
               }}
-              className="text-stone-400 active:text-red-600"
+              className="text-neutral-400 active:text-red-600"
             >
               <Trash2 size={14} />
             </button>
@@ -438,7 +438,7 @@ function SubIngredientComposition({
         <select
           value={ingredientId}
           onChange={(e) => setIngredientId(e.target.value)}
-          className="flex-1 rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          className="flex-1 rounded-lg border border-neutral-300 bg-white px-2 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
         >
           <option value="">Ingrediente…</option>
           {ingredients.map((i) => (
@@ -452,7 +452,7 @@ function SubIngredientComposition({
           placeholder="Cant."
           value={quantity || ''}
           onChange={(e) => setQuantity(Number(e.target.value) || 0)}
-          className="w-20 rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          className="w-20 rounded-lg border border-neutral-300 bg-white px-2 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
         />
         <button onClick={addItem} className="rounded-lg bg-amber-700 px-3 text-white">
           <Plus size={16} />
@@ -519,15 +519,15 @@ function ProductosTab({
               className="flex w-full items-center justify-between px-4 py-3 text-left"
             >
               <div className="min-w-0">
-                <p className="truncate font-medium text-stone-800 dark:text-stone-200">{product.name}</p>
-                <p className="text-xs text-stone-400">
+                <p className="truncate font-medium text-neutral-800 dark:text-neutral-200">{product.name}</p>
+                <p className="text-xs text-neutral-400">
                   Costo {formatMoney(cost)} · Venta {formatMoney(product.sale_price)}
                 </p>
               </div>
               <span className={`shrink-0 text-lg font-bold tabular-nums ${tone}`}>{margin.toFixed(0)}%</span>
             </button>
             {isOpen && (
-              <div className="space-y-2 border-t border-stone-100 px-4 py-3 dark:border-stone-800">
+              <div className="space-y-2 border-t border-neutral-100 px-4 py-3 dark:border-neutral-800">
                 <ProductForm
                   initial={product}
                   onSaved={onChanged}
@@ -547,7 +547,7 @@ function ProductosTab({
                       onChanged()
                     }
                   }}
-                  className="text-xs text-stone-400 underline active:text-red-600"
+                  className="text-xs text-neutral-400 underline active:text-red-600"
                 >
                   eliminar producto
                 </button>
@@ -629,7 +629,7 @@ function ProductRecipe({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">Receta</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Receta</p>
       {items.map((item) => {
         const ing = item.ingredient_id ? ingredients.find((i) => i.id === item.ingredient_id) : null
         const sub = item.sub_ingredient_id ? subIngredients.find((s) => s.id === item.sub_ingredient_id) : null
@@ -637,7 +637,7 @@ function ProductRecipe({
         const unit = ing?.unit ?? sub?.unit ?? ''
         return (
           <div key={item.id} className="flex items-center justify-between text-sm">
-            <span className="text-stone-600 dark:text-stone-300">
+            <span className="text-neutral-600 dark:text-neutral-300">
               {label} · {item.quantity} {unit}
             </span>
             <button
@@ -645,7 +645,7 @@ function ProductRecipe({
                 await supabase.from('recipe_items').delete().eq('id', item.id)
                 onChanged()
               }}
-              className="text-stone-400 active:text-red-600"
+              className="text-neutral-400 active:text-red-600"
             >
               <Trash2 size={14} />
             </button>
@@ -656,7 +656,7 @@ function ProductRecipe({
         <select
           value={selection}
           onChange={(e) => setSelection(e.target.value)}
-          className="flex-1 rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          className="flex-1 rounded-lg border border-neutral-300 bg-white px-2 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
         >
           <option value="">Ingrediente/subingrediente…</option>
           <optgroup label="Ingredientes">
@@ -679,7 +679,7 @@ function ProductRecipe({
           placeholder="Cant."
           value={quantity || ''}
           onChange={(e) => setQuantity(Number(e.target.value) || 0)}
-          className="w-20 rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          className="w-20 rounded-lg border border-neutral-300 bg-white px-2 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
         />
         <button onClick={addItem} className="rounded-lg bg-amber-700 px-3 text-white">
           <Plus size={16} />

@@ -99,8 +99,8 @@ export default function Gastos() {
       <PageHeader title="Gastos" subtitle="Del local: insumos/proveedores · Personal: descuenta el retiro" />
       <div className="space-y-4 p-4">
         <Card className="flex items-center justify-between">
-          <span className="text-sm text-stone-500 dark:text-stone-400">Gastado este mes</span>
-          <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(thisMonthTotal)}</span>
+          <span className="text-sm text-neutral-500 dark:text-neutral-400">Gastado este mes</span>
+          <span className="text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(thisMonthTotal)}</span>
         </Card>
 
         <Card as="form" onSubmit={handleAdd} className="space-y-3">
@@ -110,7 +110,7 @@ export default function Gastos() {
               type="button"
               onClick={() => setOrigin('local')}
               className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-                origin === 'local' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+                origin === 'local' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
               }`}
             >
               Del local
@@ -119,14 +119,14 @@ export default function Gastos() {
               type="button"
               onClick={() => setOrigin('personal')}
               className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-                origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+                origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
               }`}
             >
               Personal
             </button>
           </div>
           {targetEnvelope && (
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-neutral-400">
               Sale del sobre <strong>"{targetEnvelope.name}"</strong> · disponible{' '}
               <span className={targetBalance < 0 ? 'font-semibold text-red-600 dark:text-red-400' : ''}>
                 {formatMoney(targetBalance)}
@@ -134,11 +134,11 @@ export default function Gastos() {
             </p>
           )}
           <div>
-            <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Monto</label>
+            <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Monto</label>
             <MoneyInput value={amount} onChange={setAmount} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Descripción</label>
+            <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Descripción</label>
             <TextInput
               placeholder="¿Qué compraste? (ej: harina, arreglo del horno)"
               value={description}
@@ -146,11 +146,11 @@ export default function Gastos() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">¿De dónde salió? (opcional)</label>
+            <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">¿De dónde salió? (opcional)</label>
             <select
               value={paymentMethodId}
               onChange={(e) => setPaymentMethodId(e.target.value)}
-              className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+              className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
             >
               <option value="">Sin especificar</option>
               {methods.map((m) => (
@@ -165,7 +165,7 @@ export default function Gastos() {
             value={date}
             max={todayISO()}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           />
           {error && <Banner tone="bad">{error}</Banner>}
           {warning && <Banner tone="warn">{warning}</Banner>}
@@ -176,8 +176,8 @@ export default function Gastos() {
 
         <div>
           <SectionTitle>Historial</SectionTitle>
-          <Card className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
-            {expenses.length === 0 && <p className="p-4 text-sm text-stone-400">Sin gastos todavía.</p>}
+          <Card className="divide-y divide-neutral-100 p-0 dark:divide-neutral-800">
+            {expenses.length === 0 && <p className="p-4 text-sm text-neutral-400">Sin gastos todavía.</p>}
             {expenses.slice(0, 40).map((e) => {
               if (editingId === e.id) {
                 return (
@@ -201,11 +201,11 @@ export default function Gastos() {
               return (
                 <div key={e.id} className="flex items-center justify-between gap-2 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-stone-700 dark:text-stone-300">
+                    <p className="truncate text-sm text-neutral-700 dark:text-neutral-300">
                       <span
                         className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
                           e.origin === 'local'
-                            ? 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+                            ? 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
                             : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
                         }`}
                       >
@@ -213,20 +213,20 @@ export default function Gastos() {
                       </span>
                       {e.description}
                     </p>
-                    <p className="text-xs text-stone-400">
+                    <p className="text-xs text-neutral-400">
                       {formatDate(e.expense_date)}
                       {method ? ` · ${method.name}` : ''}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(e.amount)}</span>
+                    <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(e.amount)}</span>
                     <button
                       onClick={() => setEditingId(e.id)}
-                      className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                      className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                     >
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => deleteExpense(e)} className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
+                    <button onClick={() => deleteExpense(e)} className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -312,7 +312,7 @@ function EditExpenseForm({
           type="button"
           onClick={() => setOrigin('local')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
           }`}
         >
           Del local
@@ -321,14 +321,14 @@ function EditExpenseForm({
           type="button"
           onClick={() => setOrigin('personal')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
           }`}
         >
           Personal
         </button>
       </div>
       {targetEnvelope && (
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-neutral-400">
           Sale del sobre <strong>"{targetEnvelope.name}"</strong> · disponible{' '}
           <span className={targetBalance < 0 ? 'font-semibold text-red-600 dark:text-red-400' : ''}>{formatMoney(targetBalance)}</span>
         </p>
@@ -338,7 +338,7 @@ function EditExpenseForm({
       <select
         value={paymentMethodId}
         onChange={(e) => setPaymentMethodId(e.target.value)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       >
         <option value="">Sin especificar</option>
         {methods.map((m) => (
@@ -351,7 +351,7 @@ function EditExpenseForm({
         type="date"
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       />
       {error && <Banner tone="bad">{error}</Banner>}
       <div className="flex gap-2">

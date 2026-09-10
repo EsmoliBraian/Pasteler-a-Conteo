@@ -21,16 +21,16 @@ export default function Mas() {
           <Link
             key={to}
             to={to}
-            className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm active:bg-stone-50 dark:border-stone-800 dark:bg-stone-900 dark:active:bg-stone-800"
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm active:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:active:bg-neutral-800"
           >
             <div className="rounded-xl bg-amber-50 p-2.5 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
               <Icon size={20} />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-stone-900 dark:text-stone-50">{label}</p>
-              <p className="text-xs text-stone-400">{desc}</p>
+              <p className="font-semibold text-neutral-900 dark:text-neutral-50">{label}</p>
+              <p className="text-xs text-neutral-400">{desc}</p>
             </div>
-            <ChevronRight size={18} className="text-stone-300" />
+            <ChevronRight size={18} className="text-neutral-300" />
           </Link>
         ))}
       </div>

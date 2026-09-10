@@ -119,13 +119,13 @@ export default function Ventas() {
       <PageHeader title="Carga de ventas" subtitle={formatDateLong(selectedDate)} />
       <div className="space-y-4 p-4">
         <Card>
-          <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Día</label>
+          <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Día</label>
           <input
             type="date"
             value={selectedDate}
             max={todayISO()}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 outline-none focus:border-amber-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 outline-none focus:border-amber-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           />
         </Card>
 
@@ -134,9 +134,9 @@ export default function Ventas() {
           {methods.map((pm) => (
             <div key={pm.id}>
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-sm font-medium text-stone-700 dark:text-stone-300">{pm.name}</span>
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{pm.name}</span>
                 {pm.commission_pct > 0 && (
-                  <span className="text-xs text-stone-400">
+                  <span className="text-xs text-neutral-400">
                     −{pm.commission_pct}% · acredita en {pm.settlement_days}d
                   </span>
                 )}
@@ -149,7 +149,7 @@ export default function Ventas() {
         <Card className="space-y-2">
           <Row label="Total facturado" value={formatMoney(totals.gross)} />
           <Row label="Comisiones descontadas" value={`− ${formatMoney(totals.commission)}`} muted />
-          <div className="my-1 border-t border-stone-200 dark:border-stone-800" />
+          <div className="my-1 border-t border-neutral-200 dark:border-neutral-800" />
           <Row label="Neto que entra a caja" value={formatMoney(totals.net)} bold />
         </Card>
 
@@ -168,16 +168,16 @@ export default function Ventas() {
 
         <div>
           <SectionTitle>Últimos días</SectionTitle>
-          <Card className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
-            {days.length === 0 && <p className="p-4 text-sm text-stone-400">Todavía no cargaste ventas.</p>}
+          <Card className="divide-y divide-neutral-100 p-0 dark:divide-neutral-800">
+            {days.length === 0 && <p className="p-4 text-sm text-neutral-400">Todavía no cargaste ventas.</p>}
             {days.map((d) => (
               <button
                 key={d.date}
                 onClick={() => setSelectedDate(d.date)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left active:bg-stone-50 dark:active:bg-stone-800"
+                className="flex w-full items-center justify-between px-4 py-3 text-left active:bg-neutral-50 dark:active:bg-neutral-800"
               >
-                <span className="text-sm text-stone-600 dark:text-stone-300">{formatDate(d.date)}</span>
-                <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">
+                <span className="text-sm text-neutral-600 dark:text-neutral-300">{formatDate(d.date)}</span>
+                <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
                   {formatMoney(d.net)}
                 </span>
               </button>
@@ -192,9 +192,9 @@ export default function Ventas() {
 function Row({ label, value, bold, muted }: { label: string; value: string; bold?: boolean; muted?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <span className={`text-sm ${muted ? 'text-stone-400' : 'text-stone-600 dark:text-stone-300'}`}>{label}</span>
+      <span className={`text-sm ${muted ? 'text-neutral-400' : 'text-neutral-600 dark:text-neutral-300'}`}>{label}</span>
       <span
-        className={`tabular-nums ${bold ? 'text-lg font-bold text-stone-900 dark:text-stone-50' : 'text-sm text-stone-700 dark:text-stone-300'}`}
+        className={`tabular-nums ${bold ? 'text-lg font-bold text-neutral-900 dark:text-neutral-50' : 'text-sm text-neutral-700 dark:text-neutral-300'}`}
       >
         {value}
       </span>

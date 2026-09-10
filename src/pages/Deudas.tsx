@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useTable } from '../hooks/useTable'
-import type { Debt, DebtInstallment, DebtType, Envelope, EnvelopeTransaction } from '../types'
+import type { Debt, DebtInstallment, DebtType, Envelope, EnvelopeTransaction, PaymentMethod } from '../types'
 import {
   debtPendingBalance,
   debtProgress,
@@ -28,8 +28,10 @@ export default function Deudas() {
   )
   const { data: envelopes } = useTable<Envelope>('envelopes', (q) => q.eq('active', true))
   const { data: transactions, refetch: refetchTx } = useTable<EnvelopeTransaction>('envelope_transactions')
+  const { data: methods } = useTable<PaymentMethod>('payment_methods', (q) => q.eq('active', true).order('sort_order'))
   const [showForm, setShowForm] = useState(false)
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null)
+  const [payingInstallmentId, setPayingInstallmentId] = useState<string | null>(null)
   const [freedMessage, setFreedMessage] = useState<string | null>(null)
 
   const debtEnvelope = envelopes.find((e) => e.is_debt_envelope) ?? null
@@ -54,13 +56,18 @@ export default function Deudas() {
 
   const { session } = useAuth()
 
-  async function markPaid(installment: DebtInstallment) {
+  async function markPaid(installment: DebtInstallment, paymentMethodId: string) {
     if (!debtEnvelope) return
     const debt = debts.find((d) => d.id === installment.debt_id)
     if (!debt) return
     const { error } = await supabase
       .from('debt_installments')
-      .update({ status: 'pagada', paid_at: new Date().toISOString(), paid_amount: installment.amount })
+      .update({
+        status: 'pagada',
+        paid_at: new Date().toISOString(),
+        paid_amount: installment.amount,
+        payment_method_id: paymentMethodId || null,
+      })
       .eq('id', installment.id)
     if (error) return
 
@@ -74,6 +81,7 @@ export default function Deudas() {
       related_date: todayISO(),
       created_by: session?.user.id,
     })
+    setPayingInstallmentId(null)
 
     const ownInstallments = installments.filter((i) => i.debt_id === debt.id)
     const stillPending = ownInstallments.some((i) => i.id !== installment.id && i.status === 'pendiente')
@@ -117,23 +125,23 @@ export default function Deudas() {
 
         <Card className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Hay que pagar este mes</span>
-            <span className="text-2xl font-bold tabular-nums text-stone-900 dark:text-stone-50">
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Hay que pagar este mes</span>
+            <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">
               {formatMoney(dueThisMonthTotal)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Saldo del sobre "Deudas y créditos"</span>
-            <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Saldo del sobre "Deudas y créditos"</span>
+            <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
               {formatMoney(debtEnvelopeBalance)}
             </span>
           </div>
           {notEnough && (
             <Banner tone="bad">El sobre de deudas no alcanza para cubrir las cuotas de este mes.</Banner>
           )}
-          <div className="flex items-center justify-between border-t border-stone-100 pt-2 dark:border-stone-800">
-            <span className="text-xs text-stone-400">Saldo pendiente total (todas las deudas)</span>
-            <span className="text-sm font-medium tabular-nums text-stone-500 dark:text-stone-400">
+          <div className="flex items-center justify-between border-t border-neutral-100 pt-2 dark:border-neutral-800">
+            <span className="text-xs text-neutral-400">Saldo pendiente total (todas las deudas)</span>
+            <span className="text-sm font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
               {formatMoney(totalPending)}
             </span>
           </div>
@@ -143,23 +151,36 @@ export default function Deudas() {
 
         <div>
           <SectionTitle>Próximos vencimientos</SectionTitle>
-          <Card className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
-            {upcoming.length === 0 && <p className="p-4 text-sm text-stone-400">No hay cuotas pendientes.</p>}
+          <Card className="divide-y divide-neutral-100 p-0 dark:divide-neutral-800">
+            {upcoming.length === 0 && <p className="p-4 text-sm text-neutral-400">No hay cuotas pendientes.</p>}
             {upcoming.slice(0, 15).map((i) => {
               const debt = debts.find((d) => d.id === i.debt_id)
+              if (payingInstallmentId === i.id) {
+                return (
+                  <div key={i.id} className="p-3">
+                    <PayInstallmentForm
+                      installment={i}
+                      debt={debt}
+                      methods={methods}
+                      onConfirm={(methodId) => markPaid(i, methodId)}
+                      onCancel={() => setPayingInstallmentId(null)}
+                    />
+                  </div>
+                )
+              }
               return (
                 <div key={i.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-stone-800 dark:text-stone-200">{debt?.name}</p>
-                    <p className={`text-xs ${i.urgent ? 'font-semibold text-red-600 dark:text-red-400' : 'text-stone-400'}`}>
+                    <p className="truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">{debt?.name}</p>
+                    <p className={`text-xs ${i.urgent ? 'font-semibold text-red-600 dark:text-red-400' : 'text-neutral-400'}`}>
                       Vence {formatDate(i.due_date)} · cuota {i.installment_number}/{debt?.installments_count}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">
+                    <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
                       {formatMoney(i.amount)}
                     </span>
-                    <Button variant="secondary" onClick={() => markPaid(i)} className="px-3 py-2 text-xs">
+                    <Button variant="secondary" onClick={() => setPayingInstallmentId(i.id)} className="px-3 py-2 text-xs">
                       Pagar
                     </Button>
                   </div>
@@ -191,38 +212,38 @@ export default function Deudas() {
                 <Card key={debt.id}>
                   <div className="mb-1 flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-stone-900 dark:text-stone-50">{debt.name}</p>
-                      <p className="text-xs text-stone-400">{DEBT_TYPE_LABEL[debt.debt_type]}</p>
+                      <p className="font-semibold text-neutral-900 dark:text-neutral-50">{debt.name}</p>
+                      <p className="text-xs text-neutral-400">{DEBT_TYPE_LABEL[debt.debt_type]}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           debt.status === 'pagada'
                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                            : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+                            : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
                         }`}
                       >
                         {debt.status === 'pagada' ? 'Pagada' : 'Activa'}
                       </span>
                       <button
                         onClick={() => setEditingDebtId(debt.id)}
-                        className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                        className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                       >
                         <Pencil size={14} />
                       </button>
                     </div>
                   </div>
-                  <p className="mb-2 text-lg font-bold tabular-nums text-stone-900 dark:text-stone-50">
-                    {formatMoney(pending)} <span className="text-sm font-normal text-stone-400">pendiente</span>
+                  <p className="mb-2 text-lg font-bold tabular-nums text-neutral-900 dark:text-neutral-50">
+                    {formatMoney(pending)} <span className="text-sm font-normal text-neutral-400">pendiente</span>
                   </p>
                   <ProgressBar value={paid} max={total} />
                   <div className="mt-1 flex items-center justify-between">
-                    <p className="text-xs text-stone-400">
+                    <p className="text-xs text-neutral-400">
                       {paid}/{total} cuotas pagadas
                     </p>
                     <button
                       onClick={() => deleteDebt(debt)}
-                      className="text-xs text-stone-400 underline active:text-red-600"
+                      className="text-xs text-neutral-400 underline active:text-red-600"
                     >
                       eliminar
                     </button>
@@ -234,6 +255,59 @@ export default function Deudas() {
         </div>
       </div>
     </div>
+  )
+}
+
+function PayInstallmentForm({
+  installment,
+  debt,
+  methods,
+  onConfirm,
+  onCancel,
+}: {
+  installment: DebtInstallment
+  debt: Debt | undefined
+  methods: PaymentMethod[]
+  onConfirm: (paymentMethodId: string) => void
+  onCancel: () => void
+}) {
+  const [paymentMethodId, setPaymentMethodId] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  return (
+    <Card className="space-y-2">
+      <p className="font-medium text-neutral-800 dark:text-neutral-200">
+        {debt?.name} · cuota {installment.installment_number}/{debt?.installments_count} · {formatMoney(installment.amount)}
+      </p>
+      <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400">¿Con qué medio la pagaste?</label>
+      <select
+        value={paymentMethodId}
+        onChange={(e) => setPaymentMethodId(e.target.value)}
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
+      >
+        <option value="">Sin especificar</option>
+        {methods.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button
+          className="flex-1"
+          disabled={saving}
+          onClick={() => {
+            setSaving(true)
+            onConfirm(paymentMethodId)
+          }}
+        >
+          Confirmar pago
+        </Button>
+      </div>
+    </Card>
   )
 }
 
@@ -290,7 +364,7 @@ function EditDebtForm({ debt, onDone }: { debt: Debt; onDone: () => void }) {
       <select
         value={debtType}
         onChange={(e) => setDebtType(e.target.value as DebtType)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       >
         {Object.entries(DEBT_TYPE_LABEL).map(([value, label]) => (
           <option key={value} value={value}>
@@ -299,13 +373,13 @@ function EditDebtForm({ debt, onDone }: { debt: Debt; onDone: () => void }) {
         ))}
       </select>
       <div>
-        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">
+        <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">
           Monto de cada cuota (actualiza las cuotas pendientes)
         </label>
         <MoneyInput value={installmentAmount} onChange={setInstallmentAmount} />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Monto total / capital</label>
+        <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Monto total / capital</label>
         <MoneyInput value={principal} onChange={setPrincipal} />
       </div>
       <TextInput
@@ -315,7 +389,7 @@ function EditDebtForm({ debt, onDone }: { debt: Debt; onDone: () => void }) {
         onChange={(e) => setInterestRate(e.target.value)}
       />
       <TextInput placeholder="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      <p className="text-xs text-stone-400">
+      <p className="text-xs text-neutral-400">
         Para cambiar la cantidad de cuotas o la fecha de la primera, eliminá esta deuda y cargala de nuevo.
       </p>
       {error && <Banner tone="bad">{error}</Banner>}
@@ -391,7 +465,7 @@ function NewDebtForm({ onCreated }: { onCreated: () => void }) {
       <select
         value={debtType}
         onChange={(e) => setDebtType(e.target.value as DebtType)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       >
         {Object.entries(DEBT_TYPE_LABEL).map(([value, label]) => (
           <option key={value} value={value}>
@@ -400,12 +474,12 @@ function NewDebtForm({ onCreated }: { onCreated: () => void }) {
         ))}
       </select>
       <div>
-        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Monto de cada cuota</label>
+        <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Monto de cada cuota</label>
         <MoneyInput value={installmentAmount} onChange={setInstallmentAmount} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Cantidad de cuotas</label>
+          <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Cantidad de cuotas</label>
           <TextInput
             type="number"
             min={1}
@@ -414,17 +488,17 @@ function NewDebtForm({ onCreated }: { onCreated: () => void }) {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Monto total / capital</label>
+          <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Monto total / capital</label>
           <MoneyInput value={principal} onChange={setPrincipal} placeholder="opcional" />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Fecha de la primera cuota</label>
+        <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Fecha de la primera cuota</label>
         <input
           type="date"
           value={firstDate}
           onChange={(e) => setFirstDate(e.target.value)}
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
         />
       </div>
       <TextInput

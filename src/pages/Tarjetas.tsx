@@ -61,19 +61,19 @@ export default function Tarjetas() {
       <div className="space-y-4 p-4">
         <UICard className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Pendiente de pago</span>
-            <span className="text-2xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(totalPending)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Pendiente de pago</span>
+            <span className="text-2xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(totalPending)}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Gastado este mes</span>
-            <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(thisMonthTotal)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Gastado este mes</span>
+            <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(thisMonthTotal)}</span>
           </div>
           {cards.length > 0 && (
-            <div className="space-y-1 border-t border-stone-100 pt-2 dark:border-stone-800">
+            <div className="space-y-1 border-t border-neutral-100 pt-2 dark:border-neutral-800">
               {cards.map((c) => (
                 <div key={c.id} className="flex items-center justify-between text-sm">
-                  <span className="text-stone-500 dark:text-stone-400">{c.name}</span>
-                  <span className="font-medium tabular-nums text-stone-700 dark:text-stone-300">
+                  <span className="text-neutral-500 dark:text-neutral-400">{c.name}</span>
+                  <span className="font-medium tabular-nums text-neutral-700 dark:text-neutral-300">
                     {formatMoney(pendingByCard.get(c.id) ?? 0)}
                   </span>
                 </div>
@@ -98,17 +98,17 @@ export default function Tarjetas() {
                   />
                 ) : (
                   <UICard key={c.id} className="flex items-center justify-between py-3">
-                    <p className="font-medium text-stone-800 dark:text-stone-200">{c.name}</p>
+                    <p className="font-medium text-neutral-800 dark:text-neutral-200">{c.name}</p>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setEditingCardId(c.id)}
-                        className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                        className="rounded-lg p-2 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                       >
                         <Pencil size={16} />
                       </button>
                       <button
                         onClick={() => deleteCard(c)}
-                        className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                        className="rounded-lg p-2 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -132,23 +132,23 @@ export default function Tarjetas() {
 
         <div>
           <SectionTitle>Próximos vencimientos</SectionTitle>
-          <UICard className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
-            {upcoming.length === 0 && <p className="p-4 text-sm text-stone-400">No hay compras pendientes de pago.</p>}
+          <UICard className="divide-y divide-neutral-100 p-0 dark:divide-neutral-800">
+            {upcoming.length === 0 && <p className="p-4 text-sm text-neutral-400">No hay compras pendientes de pago.</p>}
             {upcoming.map((p) => {
               const card = cards.find((c) => c.id === p.card_id)
               const urgent = daysUntil(p.due_date) <= 5
               return (
                 <div key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-stone-800 dark:text-stone-200">
+                    <p className="truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">
                       {card?.name} {p.description ? `· ${p.description}` : ''}
                     </p>
-                    <p className={`text-xs ${urgent ? 'font-semibold text-red-600 dark:text-red-400' : 'text-stone-400'}`}>
+                    <p className={`text-xs ${urgent ? 'font-semibold text-red-600 dark:text-red-400' : 'text-neutral-400'}`}>
                       Vence {formatDate(p.due_date)} · {ORIGIN_LABEL[p.origin]}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(p.amount)}</span>
+                    <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(p.amount)}</span>
                     <Button variant="secondary" onClick={() => markPaid(p)} className="px-3 py-2 text-xs">
                       Pagada
                     </Button>
@@ -161,8 +161,8 @@ export default function Tarjetas() {
 
         <div>
           <SectionTitle>Historial</SectionTitle>
-          <UICard className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
-            {purchases.length === 0 && <p className="p-4 text-sm text-stone-400">Sin compras todavía.</p>}
+          <UICard className="divide-y divide-neutral-100 p-0 dark:divide-neutral-800">
+            {purchases.length === 0 && <p className="p-4 text-sm text-neutral-400">Sin compras todavía.</p>}
             {purchases.slice(0, 50).map((p) => {
               if (editingPurchaseId === p.id) {
                 return (
@@ -186,28 +186,28 @@ export default function Tarjetas() {
               return (
                 <div key={p.id} className="flex items-center justify-between gap-2 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-stone-700 dark:text-stone-300">
+                    <p className="truncate text-sm text-neutral-700 dark:text-neutral-300">
                       <span
                         className={`mr-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
                           p.status === 'pagada'
                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                            : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+                            : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
                         }`}
                       >
                         {p.status === 'pagada' ? 'Pagada' : 'Pendiente'}
                       </span>
                       {card?.name} {p.description ? `· ${p.description}` : ''}
                     </p>
-                    <p className="text-xs text-stone-400">
+                    <p className="text-xs text-neutral-400">
                       Compra {formatDate(p.purchase_date)} · vence {formatDate(p.due_date)} · {ORIGIN_LABEL[p.origin]}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(p.amount)}</span>
+                    <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(p.amount)}</span>
                     {p.status === 'pendiente' && (
                       <button
                         onClick={() => markPaid(p)}
-                        className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                        className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                         title="Marcar pagada"
                       >
                         <Check size={14} />
@@ -215,11 +215,11 @@ export default function Tarjetas() {
                     )}
                     <button
                       onClick={() => setEditingPurchaseId(p.id)}
-                      className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                      className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                     >
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => deletePurchase(p)} className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
+                    <button onClick={() => deletePurchase(p)} className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -347,7 +347,7 @@ function EditPurchaseForm({
       <select
         value={cardId}
         onChange={(e) => setCardId(e.target.value)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       >
         {cards.map((c) => (
           <option key={c.id} value={c.id}>
@@ -360,7 +360,7 @@ function EditPurchaseForm({
           type="button"
           onClick={() => setOrigin('local')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
           }`}
         >
           Del local
@@ -369,14 +369,14 @@ function EditPurchaseForm({
           type="button"
           onClick={() => setOrigin('personal')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
           }`}
         >
           Personal
         </button>
       </div>
       {targetEnvelope && (
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-neutral-400">
           Sale del sobre <strong>"{targetEnvelope.name}"</strong> · disponible{' '}
           <span className={targetBalance < 0 ? 'font-semibold text-red-600 dark:text-red-400' : ''}>{formatMoney(targetBalance)}</span>
         </p>
@@ -385,21 +385,21 @@ function EditPurchaseForm({
       <TextInput placeholder="¿Qué compraste?" value={description} onChange={(e) => setDescription(e.target.value)} />
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Fecha de compra</label>
+          <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Fecha de compra</label>
           <input
             type="date"
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Hay que pagarla el</label>
+          <label className="mb-1 block text-xs text-neutral-500 dark:text-neutral-400">Hay que pagarla el</label>
           <input
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           />
         </div>
       </div>
@@ -508,13 +508,13 @@ function NewPurchaseForm({
       <SectionTitle>Nueva compra</SectionTitle>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Tarjeta</label>
+        <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Tarjeta</label>
         {!showNewCard ? (
           <div className="flex gap-2">
             <select
               value={cardId}
               onChange={(e) => setCardId(e.target.value)}
-              className="flex-1 rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+              className="flex-1 rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
             >
               <option value="">Elegir tarjeta…</option>
               {cards.map((c) => (
@@ -542,7 +542,7 @@ function NewPurchaseForm({
           type="button"
           onClick={() => setOrigin('local')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
           }`}
         >
           Del local
@@ -551,46 +551,46 @@ function NewPurchaseForm({
           type="button"
           onClick={() => setOrigin('personal')}
           className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
           }`}
         >
           Personal
         </button>
       </div>
       {targetEnvelope && (
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-neutral-400">
           Sale del sobre <strong>"{targetEnvelope.name}"</strong> · disponible{' '}
           <span className={targetBalance < 0 ? 'font-semibold text-red-600 dark:text-red-400' : ''}>{formatMoney(targetBalance)}</span>
         </p>
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Monto</label>
+        <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Monto</label>
         <MoneyInput value={amount} onChange={setAmount} />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Detalle</label>
+        <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Detalle</label>
         <TextInput placeholder="¿Qué compraste?" value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Fecha de compra</label>
+          <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Fecha de compra</label>
           <input
             type="date"
             value={purchaseDate}
             max={todayISO()}
             onChange={(e) => setPurchaseDate(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-stone-500 dark:text-stone-400">Hay que pagarla el</label>
+          <label className="mb-1 block text-xs font-medium text-neutral-500 dark:text-neutral-400">Hay que pagarla el</label>
           <input
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             required
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           />
         </div>
       </div>

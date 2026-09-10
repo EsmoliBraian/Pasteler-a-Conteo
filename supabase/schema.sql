@@ -82,6 +82,7 @@ create table if not exists debt_installments (
   status text not null default 'pendiente' check (status in ('pendiente','pagada')),
   paid_at timestamptz,
   paid_amount numeric,
+  payment_method_id uuid references payment_methods(id),
   created_at timestamptz not null default now(),
   unique (debt_id, installment_number)
 );
@@ -122,6 +123,7 @@ create table if not exists fixed_expense_payments (
   fixed_expense_id uuid not null references fixed_expenses(id) on delete cascade,
   period text not null, -- 'YYYY-MM'
   amount numeric not null,
+  payment_method_id uuid references payment_methods(id),
   paid_at timestamptz not null default now(),
   unique (fixed_expense_id, period)
 );

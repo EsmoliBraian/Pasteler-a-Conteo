@@ -103,20 +103,20 @@ export default function Retiro() {
       <div className="space-y-4 p-4">
         <Card className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Disponible en sobre "Retiro"</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Disponible en sobre "Retiro"</span>
             <span
-              className={`text-2xl font-bold tabular-nums ${available < 0 ? 'text-red-600' : 'text-stone-900 dark:text-stone-50'}`}
+              className={`text-2xl font-bold tabular-nums ${available < 0 ? 'text-red-600' : 'text-neutral-900 dark:text-neutral-50'}`}
             >
               {formatMoney(available)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Retirado este mes</span>
-            <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(withdrawnThisMonth)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Retirado este mes</span>
+            <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(withdrawnThisMonth)}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Presupuesto mensual configurado</span>
-            <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(budgetTotal)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Presupuesto mensual configurado</span>
+            <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(budgetTotal)}</span>
           </div>
           {available < 0 && <Banner tone="bad">Ya retiraron más de lo que el negocio permite este mes.</Banner>}
           {available >= 0 && withdrawnThisMonth > budgetTotal && budgetTotal > 0 && (
@@ -126,10 +126,10 @@ export default function Retiro() {
 
         <Card className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Retiro sano proyectado (mes completo)</span>
-            <span className="text-xl font-bold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(retiroSanoProyectado)}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Retiro sano proyectado (mes completo)</span>
+            <span className="text-xl font-bold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(retiroSanoProyectado)}</span>
           </div>
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-neutral-400">
             {retiroPct}% de la venta neta, proyectada al ritmo de los días de venta ya cargados este mes.
           </p>
         </Card>
@@ -144,13 +144,13 @@ export default function Retiro() {
               ) : (
                 <Card key={cat.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-medium text-stone-800 dark:text-stone-200">{cat.name}</p>
-                    <p className="text-xs text-stone-400">
+                    <p className="font-medium text-neutral-800 dark:text-neutral-200">{cat.name}</p>
+                    <p className="text-xs text-neutral-400">
                       Presupuesto: {formatMoney(cat.monthly_budget)}/mes
                       {pctDeSano !== null && ` · ${pctDeSano.toFixed(0)}% del retiro sano`}
                     </p>
                   </div>
-                  <button onClick={() => setEditingCat(cat.id)} className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
+                  <button onClick={() => setEditingCat(cat.id)} className="rounded-lg p-2 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800">
                     <Pencil size={16} />
                   </button>
                 </Card>
@@ -171,7 +171,7 @@ export default function Retiro() {
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           >
             <option value="">Sin categoría</option>
             {categories.map((c) => (
@@ -183,7 +183,7 @@ export default function Retiro() {
           <select
             value={paymentMethodId}
             onChange={(e) => setPaymentMethodId(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           >
             <option value="">¿De dónde salió? (opcional)</option>
             {methods.map((m) => (
@@ -199,7 +199,7 @@ export default function Retiro() {
             value={date}
             max={todayISO()}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+            className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
           />
           {error && <Banner tone="bad">{error}</Banner>}
           <Button type="submit" className="w-full" disabled={saving || amount <= 0}>
@@ -209,8 +209,8 @@ export default function Retiro() {
 
         <div>
           <SectionTitle>Historial</SectionTitle>
-          <Card className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
-            {withdrawals.length === 0 && <p className="p-4 text-sm text-stone-400">Sin retiros todavía.</p>}
+          <Card className="divide-y divide-neutral-100 p-0 dark:divide-neutral-800">
+            {withdrawals.length === 0 && <p className="p-4 text-sm text-neutral-400">Sin retiros todavía.</p>}
             {withdrawals.slice(0, 30).map((w) => {
               if (editingWithdrawalId === w.id) {
                 return (
@@ -233,21 +233,21 @@ export default function Retiro() {
               return (
                 <div key={w.id} className="flex items-center justify-between gap-2 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-stone-700 dark:text-stone-300">
+                    <p className="truncate text-sm text-neutral-700 dark:text-neutral-300">
                       {cat?.name ?? 'Sin categoría'}
                       {w.description ? ` · ${w.description}` : ''}
                     </p>
-                    <p className="text-xs text-stone-400">{formatDate(w.withdrawal_date)}</p>
+                    <p className="text-xs text-neutral-400">{formatDate(w.withdrawal_date)}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(w.amount)}</span>
+                    <span className="font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">{formatMoney(w.amount)}</span>
                     <button
                       onClick={() => setEditingWithdrawalId(w.id)}
-                      className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                      className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800"
                     >
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => deleteWithdrawal(w)} className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
+                    <button onClick={() => deleteWithdrawal(w)} className="rounded-lg p-1.5 text-neutral-400 active:bg-neutral-100 dark:active:bg-neutral-800">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -326,7 +326,7 @@ function EditWithdrawalForm({
       <select
         value={categoryId}
         onChange={(e) => setCategoryId(e.target.value)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       >
         <option value="">Sin categoría</option>
         {categories.map((c) => (
@@ -338,7 +338,7 @@ function EditWithdrawalForm({
       <select
         value={paymentMethodId}
         onChange={(e) => setPaymentMethodId(e.target.value)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       >
         <option value="">¿De dónde salió? (opcional)</option>
         {methods.map((m) => (
@@ -353,7 +353,7 @@ function EditWithdrawalForm({
         type="date"
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+        className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-base text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-50"
       />
       {error && <Banner tone="bad">{error}</Banner>}
       <div className="flex gap-2">
@@ -381,7 +381,7 @@ function EditCategoryForm({ category, onDone }: { category: WithdrawalCategory; 
 
   return (
     <Card className="space-y-2">
-      <p className="font-medium text-stone-800 dark:text-stone-200">{category.name}</p>
+      <p className="font-medium text-neutral-800 dark:text-neutral-200">{category.name}</p>
       <MoneyInput value={budget} onChange={setBudget} />
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={onDone}>

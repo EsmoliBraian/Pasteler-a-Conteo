@@ -5,7 +5,7 @@ import { useTable } from '../hooks/useTable'
 import type { Envelope, EnvelopeTransaction, Expense, ExpenseOrigin, PaymentMethod } from '../types'
 import { formatDate, formatMoney, todayISO } from '../lib/format'
 import { Banner, Button, Card, MoneyInput, PageHeader, SectionTitle, TextInput } from '../components/UI'
-import { Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 
 const ORIGIN_LABEL: Record<ExpenseOrigin, string> = { local: 'Del local', personal: 'Personal' }
 
@@ -92,6 +92,8 @@ export default function Gastos() {
     refetch()
   }
 
+  const [editingId, setEditingId] = useState<string | null>(null)
+
   return (
     <div>
       <PageHeader title="Gastos" subtitle="Del local: insumos/proveedores · Personal: descuenta el retiro" />
@@ -177,6 +179,24 @@ export default function Gastos() {
           <Card className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
             {expenses.length === 0 && <p className="p-4 text-sm text-stone-400">Sin gastos todavía.</p>}
             {expenses.slice(0, 40).map((e) => {
+              if (editingId === e.id) {
+                return (
+                  <div key={e.id} className="p-3">
+                    <EditExpenseForm
+                      expense={e}
+                      methods={methods}
+                      suppliesEnvelope={suppliesEnvelope}
+                      withdrawalEnvelope={withdrawalEnvelope}
+                      balances={balances}
+                      userId={session?.user.id}
+                      onDone={() => {
+                        setEditingId(null)
+                        refetch()
+                      }}
+                    />
+                  </div>
+                )
+              }
               const method = methods.find((m) => m.id === e.payment_method_id)
               return (
                 <div key={e.id} className="flex items-center justify-between gap-2 px-4 py-3">
@@ -200,6 +220,12 @@ export default function Gastos() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(e.amount)}</span>
+                    <button
+                      onClick={() => setEditingId(e.id)}
+                      className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                    >
+                      <Pencil size={14} />
+                    </button>
                     <button onClick={() => deleteExpense(e)} className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
                       <Trash2 size={14} />
                     </button>
@@ -211,5 +237,131 @@ export default function Gastos() {
         </div>
       </div>
     </div>
+  )
+}
+
+function EditExpenseForm({
+  expense,
+  methods,
+  suppliesEnvelope,
+  withdrawalEnvelope,
+  balances,
+  userId,
+  onDone,
+}: {
+  expense: Expense
+  methods: PaymentMethod[]
+  suppliesEnvelope: Envelope | null
+  withdrawalEnvelope: Envelope | null
+  balances: Map<string, number>
+  userId: string | undefined
+  onDone: () => void
+}) {
+  const [amount, setAmount] = useState(expense.amount)
+  const [description, setDescription] = useState(expense.description ?? '')
+  const [origin, setOrigin] = useState<ExpenseOrigin>(expense.origin)
+  const [paymentMethodId, setPaymentMethodId] = useState(expense.payment_method_id ?? '')
+  const [date, setDate] = useState(expense.expense_date)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const targetEnvelope = origin === 'local' ? suppliesEnvelope : withdrawalEnvelope
+  const targetBalance = targetEnvelope ? (balances.get(targetEnvelope.id) ?? 0) : 0
+
+  async function save() {
+    if (amount <= 0) return
+    setSaving(true)
+    setError(null)
+    const { error: expError } = await supabase
+      .from('expenses')
+      .update({
+        amount,
+        description: description || null,
+        origin,
+        payment_method_id: paymentMethodId || null,
+        expense_date: date,
+      })
+      .eq('id', expense.id)
+    if (expError) {
+      setError(expError.message)
+      setSaving(false)
+      return
+    }
+    await supabase.from('envelope_transactions').delete().eq('related_type', 'expense').eq('related_id', expense.id)
+    if (targetEnvelope) {
+      await supabase.from('envelope_transactions').insert({
+        envelope_id: targetEnvelope.id,
+        amount: -amount,
+        type: 'expense_payment',
+        description: `Gasto ${ORIGIN_LABEL[origin].toLowerCase()}${description ? ' · ' + description : ''}`,
+        related_type: 'expense',
+        related_id: expense.id,
+        related_date: date,
+        created_by: userId,
+      })
+    }
+    setSaving(false)
+    onDone()
+  }
+
+  return (
+    <Card className="space-y-3">
+      <SectionTitle>Editar gasto</SectionTitle>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setOrigin('local')}
+          className={`flex-1 rounded-lg py-2 text-sm font-medium ${
+            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+          }`}
+        >
+          Del local
+        </button>
+        <button
+          type="button"
+          onClick={() => setOrigin('personal')}
+          className={`flex-1 rounded-lg py-2 text-sm font-medium ${
+            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+          }`}
+        >
+          Personal
+        </button>
+      </div>
+      {targetEnvelope && (
+        <p className="text-xs text-stone-400">
+          Sale del sobre <strong>"{targetEnvelope.name}"</strong> · disponible{' '}
+          <span className={targetBalance < 0 ? 'font-semibold text-red-600 dark:text-red-400' : ''}>{formatMoney(targetBalance)}</span>
+        </p>
+      )}
+      <MoneyInput value={amount} onChange={setAmount} />
+      <TextInput placeholder="Descripción" value={description} onChange={(e) => setDescription(e.target.value)} />
+      <select
+        value={paymentMethodId}
+        onChange={(e) => setPaymentMethodId(e.target.value)}
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+      >
+        <option value="">Sin especificar</option>
+        {methods.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+      />
+      {error && <Banner tone="bad">{error}</Banner>}
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={onDone}>
+          Cancelar
+        </Button>
+        <Button className="flex-1" onClick={save} disabled={saving}>
+          {saving ? 'Guardando…' : 'Guardar'}
+        </Button>
+      </div>
+    </Card>
   )
 }

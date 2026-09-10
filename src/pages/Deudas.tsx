@@ -12,7 +12,7 @@ import {
 } from '../lib/calculations'
 import { formatDate, formatMoney, todayISO } from '../lib/format'
 import { Banner, Button, Card, MoneyInput, PageHeader, ProgressBar, SectionTitle, TextInput } from '../components/UI'
-import { Plus, X } from 'lucide-react'
+import { Pencil, Plus, X } from 'lucide-react'
 
 const DEBT_TYPE_LABEL: Record<DebtType, string> = {
   prestamo_bancario: 'Préstamo bancario',
@@ -29,6 +29,7 @@ export default function Deudas() {
   const { data: envelopes } = useTable<Envelope>('envelopes', (q) => q.eq('active', true))
   const { data: transactions, refetch: refetchTx } = useTable<EnvelopeTransaction>('envelope_transactions')
   const [showForm, setShowForm] = useState(false)
+  const [editingDebtId, setEditingDebtId] = useState<string | null>(null)
   const [freedMessage, setFreedMessage] = useState<string | null>(null)
 
   const debtEnvelope = envelopes.find((e) => e.is_debt_envelope) ?? null
@@ -116,14 +117,8 @@ export default function Deudas() {
 
         <Card className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Saldo pendiente total</span>
+            <span className="text-sm text-stone-500 dark:text-stone-400">Hay que pagar este mes</span>
             <span className="text-2xl font-bold tabular-nums text-stone-900 dark:text-stone-50">
-              {formatMoney(totalPending)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-stone-500 dark:text-stone-400">Cuotas que vencen este mes</span>
-            <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">
               {formatMoney(dueThisMonthTotal)}
             </span>
           </div>
@@ -136,6 +131,12 @@ export default function Deudas() {
           {notEnough && (
             <Banner tone="bad">El sobre de deudas no alcanza para cubrir las cuotas de este mes.</Banner>
           )}
+          <div className="flex items-center justify-between border-t border-stone-100 pt-2 dark:border-stone-800">
+            <span className="text-xs text-stone-400">Saldo pendiente total (todas las deudas)</span>
+            <span className="text-sm font-medium tabular-nums text-stone-500 dark:text-stone-400">
+              {formatMoney(totalPending)}
+            </span>
+          </div>
         </Card>
 
         {showForm && <NewDebtForm onCreated={() => { setShowForm(false); refetchAll() }} />}
@@ -172,6 +173,18 @@ export default function Deudas() {
           <SectionTitle>Todas las deudas</SectionTitle>
           <div className="space-y-3">
             {debts.map((debt) => {
+              if (editingDebtId === debt.id) {
+                return (
+                  <EditDebtForm
+                    key={debt.id}
+                    debt={debt}
+                    onDone={() => {
+                      setEditingDebtId(null)
+                      refetchAll()
+                    }}
+                  />
+                )
+              }
               const { paid, total } = debtProgress(debt, installments)
               const pending = debtPendingBalance(debt, installments)
               return (
@@ -181,7 +194,7 @@ export default function Deudas() {
                       <p className="font-semibold text-stone-900 dark:text-stone-50">{debt.name}</p>
                       <p className="text-xs text-stone-400">{DEBT_TYPE_LABEL[debt.debt_type]}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex shrink-0 items-center gap-1">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           debt.status === 'pagada'
@@ -191,6 +204,12 @@ export default function Deudas() {
                       >
                         {debt.status === 'pagada' ? 'Pagada' : 'Activa'}
                       </span>
+                      <button
+                        onClick={() => setEditingDebtId(debt.id)}
+                        className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                      >
+                        <Pencil size={14} />
+                      </button>
                     </div>
                   </div>
                   <p className="mb-2 text-lg font-bold tabular-nums text-stone-900 dark:text-stone-50">
@@ -215,6 +234,100 @@ export default function Deudas() {
         </div>
       </div>
     </div>
+  )
+}
+
+function EditDebtForm({ debt, onDone }: { debt: Debt; onDone: () => void }) {
+  const [name, setName] = useState(debt.name)
+  const [debtType, setDebtType] = useState<DebtType>(debt.debt_type)
+  const [principal, setPrincipal] = useState(debt.principal_amount)
+  const [installmentAmount, setInstallmentAmount] = useState(debt.installment_amount)
+  const [interestRate, setInterestRate] = useState(debt.interest_rate?.toString() ?? '')
+  const [notes, setNotes] = useState(debt.notes ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function save() {
+    if (!name || installmentAmount <= 0) return
+    setSaving(true)
+    setError(null)
+    const { error: debtError } = await supabase
+      .from('debts')
+      .update({
+        name,
+        debt_type: debtType,
+        principal_amount: principal,
+        installment_amount: installmentAmount,
+        interest_rate: interestRate ? Number(interestRate) : null,
+        notes: notes || null,
+      })
+      .eq('id', debt.id)
+    if (debtError) {
+      setError(debtError.message)
+      setSaving(false)
+      return
+    }
+    if (installmentAmount !== debt.installment_amount) {
+      const { error: instError } = await supabase
+        .from('debt_installments')
+        .update({ amount: installmentAmount })
+        .eq('debt_id', debt.id)
+        .eq('status', 'pendiente')
+      if (instError) {
+        setError(instError.message)
+        setSaving(false)
+        return
+      }
+    }
+    setSaving(false)
+    onDone()
+  }
+
+  return (
+    <Card className="space-y-3">
+      <SectionTitle>Editar deuda</SectionTitle>
+      <TextInput placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
+      <select
+        value={debtType}
+        onChange={(e) => setDebtType(e.target.value as DebtType)}
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+      >
+        {Object.entries(DEBT_TYPE_LABEL).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <div>
+        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">
+          Monto de cada cuota (actualiza las cuotas pendientes)
+        </label>
+        <MoneyInput value={installmentAmount} onChange={setInstallmentAmount} />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Monto total / capital</label>
+        <MoneyInput value={principal} onChange={setPrincipal} />
+      </div>
+      <TextInput
+        placeholder="Tasa de interés % (opcional)"
+        type="number"
+        value={interestRate}
+        onChange={(e) => setInterestRate(e.target.value)}
+      />
+      <TextInput placeholder="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+      <p className="text-xs text-stone-400">
+        Para cambiar la cantidad de cuotas o la fecha de la primera, eliminá esta deuda y cargala de nuevo.
+      </p>
+      {error && <Banner tone="bad">{error}</Banner>}
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={onDone}>
+          Cancelar
+        </Button>
+        <Button className="flex-1" onClick={save} disabled={saving}>
+          {saving ? 'Guardando…' : 'Guardar'}
+        </Button>
+      </div>
+    </Card>
   )
 }
 

@@ -5,7 +5,7 @@ import { useTable } from '../hooks/useTable'
 import type { Card, CardPurchase, Envelope, EnvelopeTransaction, ExpenseOrigin } from '../types'
 import { formatDate, formatMoney, todayISO } from '../lib/format'
 import { Banner, Button, Card as UICard, MoneyInput, PageHeader, SectionTitle, TextInput } from '../components/UI'
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Pencil, Trash2 } from 'lucide-react'
 
 const ORIGIN_LABEL: Record<ExpenseOrigin, string> = { local: 'Del local', personal: 'Personal' }
 
@@ -34,6 +34,15 @@ export default function Tarjetas() {
     .filter((p) => p.purchase_date.slice(0, 7) === todayISO().slice(0, 7))
     .reduce((s, p) => s + p.amount, 0)
   const upcoming = [...pending].sort((a, b) => a.due_date.localeCompare(b.due_date))
+
+  const [editingCardId, setEditingCardId] = useState<string | null>(null)
+  const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null)
+
+  async function deleteCard(card: Card) {
+    if (!confirm(`¿Eliminar la tarjeta "${card.name}"? Las compras ya cargadas quedan como estaban.`)) return
+    await supabase.from('cards').update({ active: false }).eq('id', card.id)
+    refetchCards()
+  }
 
   async function markPaid(purchase: CardPurchase) {
     await supabase.from('card_purchases').update({ status: 'pagada', paid_at: new Date().toISOString() }).eq('id', purchase.id)
@@ -72,6 +81,44 @@ export default function Tarjetas() {
             </div>
           )}
         </UICard>
+
+        {cards.length > 0 && (
+          <div>
+            <SectionTitle>Tarjetas</SectionTitle>
+            <div className="space-y-2">
+              {cards.map((c) =>
+                editingCardId === c.id ? (
+                  <EditCardForm
+                    key={c.id}
+                    card={c}
+                    onDone={() => {
+                      setEditingCardId(null)
+                      refetchCards()
+                    }}
+                  />
+                ) : (
+                  <UICard key={c.id} className="flex items-center justify-between py-3">
+                    <p className="font-medium text-stone-800 dark:text-stone-200">{c.name}</p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setEditingCardId(c.id)}
+                        className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => deleteCard(c)}
+                        className="rounded-lg p-2 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </UICard>
+                )
+              )}
+            </div>
+          </div>
+        )}
 
         <NewPurchaseForm
           cards={cards}
@@ -117,6 +164,24 @@ export default function Tarjetas() {
           <UICard className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
             {purchases.length === 0 && <p className="p-4 text-sm text-stone-400">Sin compras todavía.</p>}
             {purchases.slice(0, 50).map((p) => {
+              if (editingPurchaseId === p.id) {
+                return (
+                  <div key={p.id} className="p-3">
+                    <EditPurchaseForm
+                      purchase={p}
+                      cards={cards}
+                      suppliesEnvelope={suppliesEnvelope}
+                      withdrawalEnvelope={withdrawalEnvelope}
+                      balances={balances}
+                      userId={session?.user.id}
+                      onDone={() => {
+                        setEditingPurchaseId(null)
+                        refetchPurchases()
+                      }}
+                    />
+                  </div>
+                )
+              }
               const card = cards.find((c) => c.id === p.card_id)
               return (
                 <div key={p.id} className="flex items-center justify-between gap-2 px-4 py-3">
@@ -148,6 +213,12 @@ export default function Tarjetas() {
                         <Check size={14} />
                       </button>
                     )}
+                    <button
+                      onClick={() => setEditingPurchaseId(p.id)}
+                      className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                    >
+                      <Pencil size={14} />
+                    </button>
                     <button onClick={() => deletePurchase(p)} className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
                       <Trash2 size={14} />
                     </button>
@@ -166,6 +237,183 @@ function daysUntil(iso: string) {
   const today = new Date(todayISO() + 'T00:00:00')
   const target = new Date(iso + 'T00:00:00')
   return Math.round((target.getTime() - today.getTime()) / 86_400_000)
+}
+
+function EditCardForm({ card, onDone }: { card: Card; onDone: () => void }) {
+  const [name, setName] = useState(card.name)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function save() {
+    if (!name.trim()) return
+    setSaving(true)
+    const { error } = await supabase.from('cards').update({ name: name.trim() }).eq('id', card.id)
+    if (error) {
+      setError(error.message)
+      setSaving(false)
+      return
+    }
+    setSaving(false)
+    onDone()
+  }
+
+  return (
+    <UICard className="space-y-2">
+      <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+      {error && <Banner tone="bad">{error}</Banner>}
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={onDone}>
+          Cancelar
+        </Button>
+        <Button className="flex-1" onClick={save} disabled={saving}>
+          Guardar
+        </Button>
+      </div>
+    </UICard>
+  )
+}
+
+function EditPurchaseForm({
+  purchase,
+  cards,
+  suppliesEnvelope,
+  withdrawalEnvelope,
+  balances,
+  userId,
+  onDone,
+}: {
+  purchase: CardPurchase
+  cards: Card[]
+  suppliesEnvelope: Envelope | null
+  withdrawalEnvelope: Envelope | null
+  balances: Map<string, number>
+  userId: string | undefined
+  onDone: () => void
+}) {
+  const [cardId, setCardId] = useState(purchase.card_id)
+  const [amount, setAmount] = useState(purchase.amount)
+  const [description, setDescription] = useState(purchase.description ?? '')
+  const [origin, setOrigin] = useState<ExpenseOrigin>(purchase.origin)
+  const [purchaseDate, setPurchaseDate] = useState(purchase.purchase_date)
+  const [dueDate, setDueDate] = useState(purchase.due_date)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const targetEnvelope = origin === 'local' ? suppliesEnvelope : withdrawalEnvelope
+  const targetBalance = targetEnvelope ? (balances.get(targetEnvelope.id) ?? 0) : 0
+
+  async function save() {
+    if (!cardId || amount <= 0 || !dueDate) return
+    setSaving(true)
+    setError(null)
+    const { error: pError } = await supabase
+      .from('card_purchases')
+      .update({
+        card_id: cardId,
+        amount,
+        description: description || null,
+        origin,
+        purchase_date: purchaseDate,
+        due_date: dueDate,
+      })
+      .eq('id', purchase.id)
+    if (pError) {
+      setError(pError.message)
+      setSaving(false)
+      return
+    }
+    // El monto/origen/tarjeta pudo cambiar, así que reconstruimos el movimiento del sobre.
+    await supabase.from('envelope_transactions').delete().eq('related_type', 'card_purchase').eq('related_id', purchase.id)
+    if (targetEnvelope) {
+      const card = cards.find((c) => c.id === cardId)
+      await supabase.from('envelope_transactions').insert({
+        envelope_id: targetEnvelope.id,
+        amount: -amount,
+        type: 'expense_payment',
+        description: `Compra tarjeta ${card?.name ?? ''}${description ? ' · ' + description : ''}`,
+        related_type: 'card_purchase',
+        related_id: purchase.id,
+        related_date: purchaseDate,
+        created_by: userId,
+      })
+    }
+    setSaving(false)
+    onDone()
+  }
+
+  return (
+    <UICard className="space-y-3">
+      <SectionTitle>Editar compra</SectionTitle>
+      <select
+        value={cardId}
+        onChange={(e) => setCardId(e.target.value)}
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+      >
+        {cards.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setOrigin('local')}
+          className={`flex-1 rounded-lg py-2 text-sm font-medium ${
+            origin === 'local' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+          }`}
+        >
+          Del local
+        </button>
+        <button
+          type="button"
+          onClick={() => setOrigin('personal')}
+          className={`flex-1 rounded-lg py-2 text-sm font-medium ${
+            origin === 'personal' ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+          }`}
+        >
+          Personal
+        </button>
+      </div>
+      {targetEnvelope && (
+        <p className="text-xs text-stone-400">
+          Sale del sobre <strong>"{targetEnvelope.name}"</strong> · disponible{' '}
+          <span className={targetBalance < 0 ? 'font-semibold text-red-600 dark:text-red-400' : ''}>{formatMoney(targetBalance)}</span>
+        </p>
+      )}
+      <MoneyInput value={amount} onChange={setAmount} />
+      <TextInput placeholder="¿Qué compraste?" value={description} onChange={(e) => setDescription(e.target.value)} />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Fecha de compra</label>
+          <input
+            type="date"
+            value={purchaseDate}
+            onChange={(e) => setPurchaseDate(e.target.value)}
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-stone-500 dark:text-stone-400">Hay que pagarla el</label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+          />
+        </div>
+      </div>
+      {error && <Banner tone="bad">{error}</Banner>}
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={onDone}>
+          Cancelar
+        </Button>
+        <Button className="flex-1" onClick={save} disabled={saving}>
+          {saving ? 'Guardando…' : 'Guardar'}
+        </Button>
+      </div>
+    </UICard>
+  )
 }
 
 function NewPurchaseForm({

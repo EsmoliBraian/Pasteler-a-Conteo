@@ -95,6 +95,8 @@ export default function Retiro() {
     refetchWithdrawals()
   }
 
+  const [editingWithdrawalId, setEditingWithdrawalId] = useState<string | null>(null)
+
   return (
     <div>
       <PageHeader title="Retiro personal" />
@@ -210,6 +212,23 @@ export default function Retiro() {
           <Card className="divide-y divide-stone-100 p-0 dark:divide-stone-800">
             {withdrawals.length === 0 && <p className="p-4 text-sm text-stone-400">Sin retiros todavía.</p>}
             {withdrawals.slice(0, 30).map((w) => {
+              if (editingWithdrawalId === w.id) {
+                return (
+                  <div key={w.id} className="p-3">
+                    <EditWithdrawalForm
+                      withdrawal={w}
+                      categories={categories}
+                      methods={methods}
+                      withdrawalEnvelope={withdrawalEnvelope}
+                      userId={session?.user.id}
+                      onDone={() => {
+                        setEditingWithdrawalId(null)
+                        refetchWithdrawals()
+                      }}
+                    />
+                  </div>
+                )
+              }
               const cat = categories.find((c) => c.id === w.withdrawal_category_id)
               return (
                 <div key={w.id} className="flex items-center justify-between gap-2 px-4 py-3">
@@ -222,6 +241,12 @@ export default function Retiro() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{formatMoney(w.amount)}</span>
+                    <button
+                      onClick={() => setEditingWithdrawalId(w.id)}
+                      className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800"
+                    >
+                      <Pencil size={14} />
+                    </button>
                     <button onClick={() => deleteWithdrawal(w)} className="rounded-lg p-1.5 text-stone-400 active:bg-stone-100 dark:active:bg-stone-800">
                       <Trash2 size={14} />
                     </button>
@@ -233,6 +258,113 @@ export default function Retiro() {
         </div>
       </div>
     </div>
+  )
+}
+
+function EditWithdrawalForm({
+  withdrawal,
+  categories,
+  methods,
+  withdrawalEnvelope,
+  userId,
+  onDone,
+}: {
+  withdrawal: Withdrawal
+  categories: WithdrawalCategory[]
+  methods: PaymentMethod[]
+  withdrawalEnvelope: Envelope | null
+  userId: string | undefined
+  onDone: () => void
+}) {
+  const [amount, setAmount] = useState(withdrawal.amount)
+  const [categoryId, setCategoryId] = useState(withdrawal.withdrawal_category_id ?? '')
+  const [paymentMethodId, setPaymentMethodId] = useState(withdrawal.payment_method_id ?? '')
+  const [description, setDescription] = useState(withdrawal.description ?? '')
+  const [date, setDate] = useState(withdrawal.withdrawal_date)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function save() {
+    if (amount <= 0) return
+    setSaving(true)
+    setError(null)
+    const { error: wError } = await supabase
+      .from('withdrawals')
+      .update({
+        withdrawal_category_id: categoryId || null,
+        payment_method_id: paymentMethodId || null,
+        amount,
+        description: description || null,
+        withdrawal_date: date,
+      })
+      .eq('id', withdrawal.id)
+    if (wError) {
+      setError(wError.message)
+      setSaving(false)
+      return
+    }
+    await supabase.from('envelope_transactions').delete().eq('related_type', 'withdrawal').eq('related_id', withdrawal.id)
+    if (withdrawalEnvelope) {
+      await supabase.from('envelope_transactions').insert({
+        envelope_id: withdrawalEnvelope.id,
+        amount: -amount,
+        type: 'withdrawal',
+        description: description || 'Retiro personal',
+        related_type: 'withdrawal',
+        related_id: withdrawal.id,
+        related_date: date,
+        created_by: userId,
+      })
+    }
+    setSaving(false)
+    onDone()
+  }
+
+  return (
+    <Card className="space-y-2">
+      <SectionTitle>Editar retiro</SectionTitle>
+      <select
+        value={categoryId}
+        onChange={(e) => setCategoryId(e.target.value)}
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+      >
+        <option value="">Sin categoría</option>
+        {categories.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+      <select
+        value={paymentMethodId}
+        onChange={(e) => setPaymentMethodId(e.target.value)}
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+      >
+        <option value="">¿De dónde salió? (opcional)</option>
+        {methods.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+      <MoneyInput value={amount} onChange={setAmount} />
+      <TextInput placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-50"
+      />
+      {error && <Banner tone="bad">{error}</Banner>}
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={onDone}>
+          Cancelar
+        </Button>
+        <Button className="flex-1" onClick={save} disabled={saving}>
+          {saving ? 'Guardando…' : 'Guardar'}
+        </Button>
+      </div>
+    </Card>
   )
 }
 
